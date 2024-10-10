@@ -2,20 +2,28 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <getopt.h>
+#include "lib.h"
 
 int main(int argc, char *argv[]) {
-    // Parsear argumentos de linha de comando (use getopt)
+    // parsear argumentos de linha de comando (use getopt)
     getopt(argc, argv, "i:r:o:");
         
-    // Carregar ou calcular o LBP da imagem de teste
-
+    // calcular o LBP da imagem de teste
+    void lbp(struct imagemPGM *img, int **lbp);
     
     // Para cada imagem na base de referência:
-    //     Verificar se o arquivo .lbp existe
-    //     Se não, calcular e salvar o vetor LBP
-    //     Calcular a distância Euclidiana entre os vetores LBP
+    //     verificar se o arquivo .lbp existe
+    //     se não, calcular e salvar o vetor LBP
+    //     calcular a distância Euclidiana entre os vetores LBP
+
+
     
-    // Exibir a imagem com a menor distância
+    
+    // exibir a imagem com a menor distância == imagem mais similar
+
+
+    // gerar a imagem LBP
     
     return 0;
 }
