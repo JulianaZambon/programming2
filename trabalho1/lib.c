@@ -17,10 +17,78 @@ seus vizinhos.
 */
 
 /* Função para calcular o LBP */
-void lbp(struct imagemPGM *img, int **lbp);
+void lbp(struct imagemPGM *img, unsigned char **lbp)
+{
+    int i, j;
+    int **pixels = img->pixels;
+    int largura = img->largura;
+    int altura = img->altura;
+
+    // Calcula o valor LBP para cada pixel, exceto as bordas
+    for (i = 1; i < altura - 1; i++)
+    {
+        for (j = 1; j < largura - 1; j++)
+        {
+            int pixel_central = pixels[i][j];
+            unsigned char valor = 0;
+
+            // Calcula o valor LBP baseado nos vizinhos
+            valor |= (pixels[i - 1][j - 1] > pixel_central) << 7;
+            valor |= (pixels[i - 1][j] > pixel_central) << 6;
+            valor |= (pixels[i - 1][j + 1] > pixel_central) << 5;
+            valor |= (pixels[i][j + 1] > pixel_central) << 4;
+            valor |= (pixels[i + 1][j + 1] > pixel_central) << 3;
+            valor |= (pixels[i + 1][j] > pixel_central) << 2;
+            valor |= (pixels[i + 1][j - 1] > pixel_central) << 1;
+            valor |= (pixels[i][j - 1] > pixel_central) << 0;
+
+            lbp[i][j] = valor;
+        }
+    }
+}
 
 /* Função para extrair um vetor de características que sumarize o conteúdo da imagem */
-void extrair_vetor_caracteristicas(struct imagemPGM *img, double *vetor);
+void extrair_vetor_caracteristicas(struct imagemPGM *img, double *vetor)
+{
+    // Verifica se a imagem é válida
+    if (img == NULL || img->pixels == NULL) {
+        fprintf(stderr, "Erro: imagem inválida.\n");
+        return;
+    }
+
+    int i, j;
+    int **pixels = img->pixels;
+    int largura = img->largura;
+    int altura = img->altura;
+    int maximo = img->maximo;  // Valor máximo de cinza na imagem
+    int histograma[256] = {0};
+    int total = 0;
+
+    // Verifica se o valor máximo é maior que 255 (escala PGM não standard)
+    if (maximo > 255) {
+        fprintf(stderr, "Erro: valor máximo da imagem maior que 255.\n");
+        return;
+    }
+
+    // Calcula o histograma e contabiliza pixels, descartando as bordas
+    for (i = 1; i < altura - 1; i++) {
+        for (j = 1; j < largura - 1; j++) {
+            histograma[pixels[i][j]]++;  // Incrementa a contagem para o pixel correspondente
+            total++;  // Contador total de pixels processados
+        }
+    }
+
+    // Se não houver pixels válidos, evita divisão por zero
+    if (total == 0) {
+        fprintf(stderr, "Erro: imagem sem pixels processáveis.\n");
+        return;
+    }
+
+    // Normaliza o histograma e preenche o vetor de características
+    for (i = 0; i < 256; i++) {
+        vetor[i] = (double)histograma[i] / total;
+    }
+}
 
 /* Função para calcular a distância Euclidiana */
 double distancias_euclidianas(double *v1, double *v2, int n);
@@ -29,10 +97,10 @@ double distancias_euclidianas(double *v1, double *v2, int n);
 void gerar_imagem_lbp(struct imagemPGM *img, int **lbp);
 
 /* Função para gravar o vetor LBP em um arquivo binário */
-void gravar_vetor_lbp(char *nome_arquivo, int **lbp, int largura, int altura);
+void gravar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
 
 /* Função para carregar o vetor LBP de um arquivo binário */
-void carregar_vetor_lbp(char *nome_arquivo, double *vetor_lbp, int largura, int altura);
+void carregar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
 
 /* Função para normalizar o histograma da imagem */
 /* Esta função será usada para normalizar o histograma da imagem
