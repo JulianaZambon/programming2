@@ -256,18 +256,216 @@ void normalizar_histograma(struct imagemPGM *img, double *histograma_normalizado
 
 /* Função para ignorar comentários em arquivos PGM */
 /* Ignora linhas de comentários iniciadas com # nos arquivos PGM */
-void ignora_comentarios(FILE *arquivo);
+void ignora_comentarios(FILE *arquivo)
+{
+    int c = fgetc(arquivo);
+    while (c == '#') {
+        while (c != '\n') {
+            c = fgetc(arquivo);
+        }
+        c = fgetc(arquivo);
+    }
+    ungetc(c, arquivo);
+}
 
 /* Função para ler uma imagem PGM (suporta P2 e P5) */
-struct imagemPGM *ler_imagem(const char *nome_arquivo);
+struct imagemPGM *ler_imagem(const char *nome_arquivo)
+{
+    FILE *arquivo = fopen(nome_arquivo, "rb");
+    if (arquivo == NULL) {
+        return NULL;  // Retorna NULL se não for possível abrir o arquivo
+    }
 
-/* Função para liberar a memória da imagem */
-void liberar_imagem(struct imagemPGM *img);
+    // Lê o cabeçalho da imagem PGM
+    char tipo[3];
+    int largura, altura, maximo;
+
+    // Lê o tipo da imagem
+    fscanf(arquivo, "%2s", tipo);
+    ignora_comentarios(arquivo);
+
+    // Lê largura e altura
+    fscanf(arquivo, "%d", &largura);
+    ignora_comentarios(arquivo);
+    fscanf(arquivo, "%d", &altura);
+    ignora_comentarios(arquivo);
+    fscanf(arquivo, "%d", &maximo);
+    fgetc(arquivo);  // Lê o caractere de nova linha
+
+    // Verifica se o tipo da imagem é P2 ou P5
+    if (strcmp(tipo, "P2") != 0 && strcmp(tipo, "P5") != 0) {
+        fclose(arquivo);
+        return NULL;  // Retorna NULL se o tipo da imagem não for P2 ou P5
+    }
+
+    // Aloca memória para a estrutura da imagem
+    struct imagemPGM *img = (struct imagemPGM *)malloc(sizeof(struct imagemPGM));
+    if (img == NULL) {
+        fclose(arquivo);
+        return NULL;  // Retorna NULL se falhar na alocação de memória
+    }
+
+    // Preenche os campos da estrutura da imagem
+    img->largura = largura;
+    img->altura = altura;
+    img->maximo = maximo;
+
+    // Aloca memória para os ponteiros de linha da imagem
+    img->pixels = (int **)malloc(altura * sizeof(int *));
+    if (img->pixels == NULL) {
+        free(img);  // Libera a memória alocada para a estrutura da imagem
+        fclose(arquivo);
+        return NULL;  // Retorna NULL se falhar na alocação de memória
+    }
+
+    // Aloca memória para cada linha da imagem
+    int i;
+    for (i = 0; i < altura; i++) {
+        img->pixels[i] = (int *)malloc(largura * sizeof(int));
+        if (img->pixels[i] == NULL) {
+            // Se falhar em alocar para alguma linha,
+            // libera a memória já alocada
+            for (int j = 0; j < i; j++) {
+                free(img->pixels[j]); // Libera linhas anteriores
+            }
+            free(img->pixels);  // Libera o array de ponteiros
+            free(img);          // Libera a estrutura da imagem
+            fclose(arquivo);
+            return NULL;  // Retorna NULL se falhar na alocação de memória
+        }
+    }
+
+    // Lê os pixels da imagem
+    if (strcmp(tipo, "P2") == 0) {
+        // Leitura para P2 (ASCII)
+        for (i = 0; i < altura; i++) {
+            for (int j = 0; j < largura; j++) {
+                fscanf(arquivo, "%d", &img->pixels[i][j]);
+            }
+        }
+    } else {
+        // Leitura para P5 (Binary)
+        fread(&img->pixels[0][0], sizeof(int), largura * altura, arquivo);
+    }
+
+    // Fecha o arquivo
+    fclose(arquivo);
+    
+    return img;  // Retorna a estrutura da imagem lida
+}
+
+/* Função para liberar a memória da imagem PGM */
+void liberar_imagem(struct imagemPGM *img)
+{
+    if (img == NULL) {
+        return;  // Não faz nada se a imagem for nula
+    }
+
+    // Libera a memória de cada linha da imagem
+    if (img->pixels != NULL) {
+        for (int i = 0; i < img->altura; i++) {
+            free(img->pixels[i]);  // Libera cada linha
+        }
+        free(img->pixels);  // Libera o array de ponteiros de linha
+    }
+
+    // Libera a estrutura da imagem
+    free(img);
+}
 
 /* Função para escrever uma imagem PGM (mantém o formato original: P2 ou P5) */
 /* As funções de leitura e escrita de imagens garantem que o formato da imagem
 de saída será o mesmo da imagem de entrada, seja P2 ou P5.*/
-void escrever_imagem(const char *nome_arquivo, struct imagemPGM *img, const char *tipo);
+void escrever_imagem(const char *nome_arquivo, struct imagemPGM *img, const char *tipo)
+{
+    // Verifica se a imagem e o tipo são válidos
+    if (img == NULL || tipo == NULL) {
+        return;  // Não faz nada se a imagem ou tipo forem nulos
+    }
+
+    FILE *arquivo = fopen(nome_arquivo, "wb");
+    if (arquivo == NULL) {
+        return;  // Não faz nada se não for possível abrir o arquivo
+    }
+
+    // Escreve o cabeçalho da imagem PGM
+    fprintf(arquivo, "%s\n", tipo);
+    fprintf(arquivo, "%d %d\n", img->largura, img->altura);
+    fprintf(arquivo, "%d\n", img->maximo);
+
+    // Escreve os pixels da imagem
+    if (strcmp(tipo, "P2") == 0) {
+        // Escrita para P2 (ASCII)
+        for (int i = 0; i < img->altura; i++) {
+            for (int j = 0; j < img->largura; j++) {
+                fprintf(arquivo, "%d ", img->pixels[i][j]);
+            }
+            fprintf(arquivo, "\n");
+        }
+    } else if (strcmp(tipo, "P5") == 0) {
+        // Escrita para P5 (Binary)
+        for (int i = 0; i < img->altura; i++) {
+            fwrite(img->pixels[i], sizeof(unsigned char), img->largura, arquivo);
+        }
+    } else {
+        fclose(arquivo);  // Fecha o arquivo e não escreve se o tipo não for reconhecido
+        return;
+    }
+
+    // Fecha o arquivo
+    fclose(arquivo);
+}
 
 /* Função para descartar bordas da imagem após o processo de convolução */
-struct imagemPGM *descartar_bordas(struct imagemPGM *img);
+struct imagemPGM *descartar_bordas(struct imagemPGM *img)
+{
+    // Verifica se a imagem é válida
+    if (img == NULL || img->pixels == NULL) {
+        return NULL;  // Retorna NULL se a imagem for inválida
+    }
+
+    int i, j;
+    int largura = img->largura;
+    int altura = img->altura;
+
+    // Cria uma nova estrutura para a imagem sem as bordas
+    struct imagemPGM *img_sem_bordas = (struct imagemPGM *)malloc(sizeof(struct imagemPGM));
+    if (img_sem_bordas == NULL) {
+        return NULL;  // Retorna NULL se falhar na alocação de memória
+    }
+
+    img_sem_bordas->largura = largura - 2;  // Desconta as bordas esquerda e direita
+    img_sem_bordas->altura = altura - 2;  // Desconta as bordas superior e inferior
+    img_sem_bordas->maximo = img->maximo;  // Mantém o valor máximo de cinza
+
+    // Aloca memória para os ponteiros de linha da imagem sem as bordas
+    img_sem_bordas->pixels = (int **)malloc(img_sem_bordas->altura * sizeof(int *));
+    if (img_sem_bordas->pixels == NULL) {
+        free(img_sem_bordas);  // Libera a memória alocada para a nova imagem
+        return NULL;  // Retorna NULL se falhar na alocação de memória
+    }
+
+    // Aloca memória para cada linha da imagem sem as bordas
+    for (i = 0; i < img_sem_bordas->altura; i++) {
+        img_sem_bordas->pixels[i] = (int *)malloc(img_sem_bordas->largura * sizeof(int));
+        if (img_sem_bordas->pixels[i] == NULL) {
+            // Se falhar em alocar para alguma linha, libera a memória já alocada
+            for (j = 0; j < i; j++) {
+                free(img_sem_bordas->pixels[j]);  // Libera linhas anteriores
+            }
+            free(img_sem_bordas->pixels);  // Libera o array de ponteiros
+            free(img_sem_bordas);  // Libera a estrutura da nova imagem
+            return NULL;  // Retorna NULL se falhar na alocação de memória
+        }
+    }
+
+    // Copia os pixels da imagem original para a nova imagem, descartando as bordas
+    for (i = 0; i < img_sem_bordas->altura; i++) {
+        for (j = 0; j < img_sem_bordas->largura; j++) {
+            img_sem_bordas->pixels[i][j] = img->pixels[i + 1][j + 1];  // Descartando as bordas
+        }
+    }
+
+    return img_sem_bordas;  // Retorna a nova imagem sem bordas
+}
+
