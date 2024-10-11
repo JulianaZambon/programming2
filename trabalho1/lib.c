@@ -106,44 +106,43 @@ double distancias_euclidianas(double *v1, double *v2, int n)
 /* Função para gerar a imagem LBP com o nome de saída especificado */
 void gerar_imagem_lbp(struct imagemPGM *img, int **lbp, const char *nome_arquivo_saida)
 {
-    if (img == NULL || lbp == NULL || nome_arquivo_saida == NULL) {
-        // Se algum parâmetro estiver inválido, não cria a imagem de saída.
-        return;
+    // Verifica se os parâmetros são válidos
+    if (img == NULL || lbp == NULL || nome_arquivo_saida == NULL || strlen(nome_arquivo_saida) == 0) {
+        return; // Não cria a imagem de saída se algum parâmetro for inválido
     }
 
     int i, j;
     int largura = img->largura;
     int altura = img->altura;
 
-    // Cria uma nova imagem LBP com o mesmo tamanho da original
+    // Cria uma nova estrutura para a imagem LBP
     struct imagemPGM *img_lbp = (struct imagemPGM *)malloc(sizeof(struct imagemPGM));
     if (img_lbp == NULL) {
-        // Falha na alocação, não cria a imagem de saída.
-        return;
+        return; // Falha na alocação, não cria a imagem de saída
     }
 
     img_lbp->largura = largura;
     img_lbp->altura = altura;
     img_lbp->maximo = 255;  // Valor máximo de cinza (LBP usa 8 bits por pixel)
 
+    // Aloca memória para os ponteiros de linha da imagem LBP
     img_lbp->pixels = (int **)malloc(altura * sizeof(int *));
     if (img_lbp->pixels == NULL) {
-        // Falha na alocação de memória, limpa a memória alocada e retorna.
-        free(img_lbp);
-        return;
+        free(img_lbp); // Libera a memória alocada para img_lbp
+        return; // Falha na alocação de memória
     }
 
     // Aloca memória para cada linha da imagem LBP
     for (i = 0; i < altura; i++) {
         img_lbp->pixels[i] = (int *)malloc(largura * sizeof(int));
         if (img_lbp->pixels[i] == NULL) {
-            // Se falhar em alocar para alguma linha, libera a memória já alocada e retorna.
+            // Se falhar em alocar para alguma linha, libera a memória já alocada
             for (j = 0; j < i; j++) {
                 free(img_lbp->pixels[j]);
             }
             free(img_lbp->pixels);
             free(img_lbp);
-            return;
+            return; // Falha na alocação de memória
         }
     }
 
@@ -154,8 +153,8 @@ void gerar_imagem_lbp(struct imagemPGM *img, int **lbp, const char *nome_arquivo
         }
     }
 
-    // Determina o formato da imagem original (P2 ou P5)
-    const char *tipo = (img->maximo > 1) ? "P5" : "P2";
+    // O tipo da imagem LBP é sempre P2, pois os valores são de 0 a 255
+    const char *tipo = "P2";
 
     // Escreve a imagem LBP com o nome especificado na opção -o
     escrever_imagem(nome_arquivo_saida, img_lbp, tipo);
@@ -165,17 +164,95 @@ void gerar_imagem_lbp(struct imagemPGM *img, int **lbp, const char *nome_arquivo
 }
 
 
-
 /* Função para gravar o vetor LBP em um arquivo binário */
-void gravar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
+void gravar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho)
+{
+    // Validação de parâmetros
+    if (vetor_lbp == NULL || tamanho <= 0) {
+        return;  // Não faz nada se o vetor é nulo ou tamanho é inválido
+    }
+
+    FILE *arquivo = fopen(nome_arquivo, "wb");
+    if (arquivo == NULL) {
+        return;  // Não faz nada se não for possível abrir o arquivo
+    }
+
+    // Grava o vetor LBP no arquivo binário
+    size_t elementos_escritos = fwrite(vetor_lbp, sizeof(double), tamanho, arquivo);
+
+    // Se a quantidade de elementos escritos não for igual ao tamanho esperado
+    if (elementos_escritos != tamanho) {
+        // Aqui você pode optar por retornar ou tomar outra ação
+        fclose(arquivo);
+        return;  // Não faz nada em caso de erro na escrita
+    }
+
+    // Fecha o arquivo
+    fclose(arquivo);
+}
+
 
 /* Função para carregar o vetor LBP de um arquivo binário */
-void carregar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
+void carregar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho)
+{
+    // Validação de parâmetros
+    if (vetor_lbp == NULL || tamanho <= 0) {
+        return;  // Não faz nada se o vetor é nulo ou tamanho é inválido
+    }
+
+    FILE *arquivo = fopen(nome_arquivo, "rb");
+    if (arquivo == NULL) {
+        return;  // Não faz nada se não for possível abrir o arquivo
+    }
+
+    // Lê o vetor LBP do arquivo binário
+    size_t elementos_lidos = fread(vetor_lbp, sizeof(double), tamanho, arquivo);
+
+    // Se a quantidade de elementos lidos não for igual ao tamanho esperado
+    if (elementos_lidos != tamanho) {
+        fclose(arquivo);
+        return;  // Não faz nada em caso de erro na leitura
+    }
+
+    // Fecha o arquivo
+    fclose(arquivo);
+}
 
 /* Função para normalizar o histograma da imagem */
 /* Esta função será usada para normalizar o histograma da imagem
-dividindo os pixels pelo total, corrigindo assim diferenças de escala*/
-void normalizar_histograma(struct imagemPGM *img, double *histograma_normalizado);
+   dividindo os pixels pelo total, corrigindo assim diferenças de escala */
+void normalizar_histograma(struct imagemPGM *img, double *histograma_normalizado)
+{
+    if (img == NULL || histograma_normalizado == NULL) {
+        // Se a imagem ou o vetor de histograma for inválido, não faz nada
+        return;
+    }
+
+    int i, j;
+    int **pixels = img->pixels;
+    int largura = img->largura;
+    int altura = img->altura;
+    int histograma[256] = {0};  // Inicializa o histograma com zeros
+    int total = 0;  // Total de pixels processados
+
+    // Calcula o histograma e contabiliza os pixels válidos, ignorando as bordas
+    for (i = 1; i < altura - 1; i++) {
+        for (j = 1; j < largura - 1; j++) {
+            histograma[pixels[i][j]]++;  // Incrementa a contagem do valor de pixel
+            total++;
+        }
+    }
+
+    // Se não houver pixels válidos, não prossegue com a normalização
+    if (total == 0) {
+        return;
+    }
+
+    // Normaliza o histograma dividindo pela contagem total de pixels
+    for (i = 0; i < 256; i++) {
+        histograma_normalizado[i] = (double)histograma[i] / total;
+    }
+}
 
 /* Função para ignorar comentários em arquivos PGM */
 /* Ignora linhas de comentários iniciadas com # nos arquivos PGM */
