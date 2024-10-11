@@ -91,10 +91,80 @@ void extrair_vetor_caracteristicas(struct imagemPGM *img, double *vetor)
 }
 
 /* Função para calcular a distância Euclidiana */
-double distancias_euclidianas(double *v1, double *v2, int n);
+double distancias_euclidianas(double *v1, double *v2, int n)
+{
+    double soma = 0.0;
+    int i;
 
-/* Função para gerar a imagem LBP */
-void gerar_imagem_lbp(struct imagemPGM *img, int **lbp);
+    for (i = 0; i < n; i++) {
+        soma += (v1[i] - v2[i]) * (v1[i] - v2[i]);
+    }
+
+    return sqrt(soma);
+}
+
+/* Função para gerar a imagem LBP com o nome de saída especificado */
+void gerar_imagem_lbp(struct imagemPGM *img, int **lbp, const char *nome_arquivo_saida)
+{
+    if (img == NULL || lbp == NULL || nome_arquivo_saida == NULL) {
+        // Se algum parâmetro estiver inválido, não cria a imagem de saída.
+        return;
+    }
+
+    int i, j;
+    int largura = img->largura;
+    int altura = img->altura;
+
+    // Cria uma nova imagem LBP com o mesmo tamanho da original
+    struct imagemPGM *img_lbp = (struct imagemPGM *)malloc(sizeof(struct imagemPGM));
+    if (img_lbp == NULL) {
+        // Falha na alocação, não cria a imagem de saída.
+        return;
+    }
+
+    img_lbp->largura = largura;
+    img_lbp->altura = altura;
+    img_lbp->maximo = 255;  // Valor máximo de cinza (LBP usa 8 bits por pixel)
+
+    img_lbp->pixels = (int **)malloc(altura * sizeof(int *));
+    if (img_lbp->pixels == NULL) {
+        // Falha na alocação de memória, limpa a memória alocada e retorna.
+        free(img_lbp);
+        return;
+    }
+
+    // Aloca memória para cada linha da imagem LBP
+    for (i = 0; i < altura; i++) {
+        img_lbp->pixels[i] = (int *)malloc(largura * sizeof(int));
+        if (img_lbp->pixels[i] == NULL) {
+            // Se falhar em alocar para alguma linha, libera a memória já alocada e retorna.
+            for (j = 0; j < i; j++) {
+                free(img_lbp->pixels[j]);
+            }
+            free(img_lbp->pixels);
+            free(img_lbp);
+            return;
+        }
+    }
+
+    // Preenche a imagem LBP com os valores gerados
+    for (i = 0; i < altura; i++) {
+        for (j = 0; j < largura; j++) {
+            img_lbp->pixels[i][j] = lbp[i][j];
+        }
+    }
+
+    // Determina o formato da imagem original (P2 ou P5)
+    const char *tipo = (img->maximo > 1) ? "P5" : "P2";
+
+    // Escreve a imagem LBP com o nome especificado na opção -o
+    escrever_imagem(nome_arquivo_saida, img_lbp, tipo);
+
+    // Libera a memória da imagem LBP
+    liberar_imagem(img_lbp);
+}
+
+
 
 /* Função para gravar o vetor LBP em um arquivo binário */
 void gravar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
