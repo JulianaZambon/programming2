@@ -18,7 +18,7 @@ void extrair_vetor_caracteristicas(struct imagemPGM *img, double *vetor);
 double distancias_euclidianas(double *v1, double *v2, int n);
 
 /* Função para gerar a imagem LBP */
-void gerar_imagem_lbp(struct imagemPGM *img, int **lbp);
+void gerar_imagem_lbp(struct imagemPGM *img, int **lbp, const char *nome_arquivo_saida);
 
 /* Função para gravar o vetor LBP em um arquivo binário */
 void gravar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
