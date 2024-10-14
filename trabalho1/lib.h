@@ -1,51 +1,106 @@
+/* Autora: Juliana Zambon (jz22), GRR20224168 */
+
 #ifndef LIB_H
 #define LIB_H
 
-struct imagemPGM {
-    int largura;
-    int altura;
-    int maximo; /* valor máximo de cinza */
-    int **pixels;
+#include <stdio.h>
+#include <stdlib.h>
+
+/* Estruturas para armazenar dados da imagem e do histograma LBP */
+
+/* Estrutura para armazenar a imagem PGM */
+struct imagemPGM
+{
+    int largura;            /* Largura da imagem em pixels */
+    int altura;             /* Altura da imagem em pixels */
+    int maximo;             /* Valor máximo de cinza (branco) */
+    unsigned char **pixels; /* Matriz de pixels (valores de 0 a 255) */
 };
 
-/* Função para calcular o LBP */
-void lbp(struct imagemPGM *img, unsigned char **lbp);
+/* Estrutura para armazenar o histograma LBP */
+struct LBPHistograma
+{
+    int histograma[256]; /* Frequência de cada padrão LBP */
+    double tamanho;      /* Total de padrões LBP computados */
+};
 
-/* Função para extrair um vetor de características que sumarize o conteúdo da imagem */
-void extrair_vetor_caracteristicas(struct imagemPGM *img, double *vetor);
+/*--------------------------------------------------------------------*/
+/* Funções para alocação de memória */
 
-/* Função para calcular a distância Euclidiana */
-double distancias_euclidianas(double *v1, double *v2, int n);
+/* Aloca memória para a imagem PGM */
+struct imagemPGM *alocar_imagem(int largura, int altura);
 
-/* Função para gerar a imagem LBP */
-void gerar_imagem_lbp(struct imagemPGM *img, int **lbp, const char *nome_arquivo_saida);
+/* Aloca memória para o histograma LBP */
+struct LBPHistograma *alocar_histograma();
 
-/* Função para gravar o vetor LBP em um arquivo binário */
-void gravar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
+/* Aloca memória para os pixels da imagem */
+unsigned char **alocar_pixels(int largura, int altura);
 
-/* Função para carregar o vetor LBP de um arquivo binário */
-void carregar_vetor_lbp(const char *nome_arquivo, double *vetor_lbp, int tamanho);
+/*--------------------------------------------------------------------*/
+/* Funções para manipulação de pixels */
 
-/* Função para normalizar o histograma da imagem */
-void normalizar_histograma(struct imagemPGM *img, double *histograma_normalizado);
+/* Ignorar Linhas de Comentário: garantir que os comentários
+(linhas que começam com #) sejam ignorados ao ler arquivos P2 e P5*/
+void ignorar_comentarios(FILE *arquivo);
 
-/* Função para ignorar comentários em arquivos PGM */
-void ignora_comentarios(FILE *arquivo);
+/* Preenche a matriz de pixels para o formato P2 */
+struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img);
 
-/* Função para ler uma imagem PGM (suporta P2 e P5) */
-struct imagemPGM *ler_imagem(const char *nome_arquivo);
+/* Preenche a matriz de pixels para o formato P5 */
+struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img);
 
-/* Função para liberar a memória da imagem */
-void liberar_imagem(struct imagemPGM *img);
+/* Função para ler a imagem PGM */
+struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *tipo);
 
-/* Função para escrever uma imagem PGM (mantém o formato original: P2 ou P5) */
-void escrever_imagem(const char *nome_arquivo, struct imagemPGM *img, const char *tipo);
+/*--------------------------------------------------------------------*/
+/* Funções para processamento LBP */
 
-/* Função para descartar bordas da imagem após o processo de convolução */
-struct imagemPGM *descartar_bordas(struct imagemPGM *img);
+/* Inicializa uma nova imagem para armazenar o resultado do LBP */
+void nova_imagem_inicializa(struct imagemPGM *img, struct imagemPGM *nova);
 
-#endif
+/* Calcula o LBP para um pixel específico da imagem */
+/* Remover Bordas Durante a Convolução: garantir que as bordas da imagem original não sejam processadas.
+Assegurando que o cálculo comece após as bordas (por exemplo, começando de 1 até altura - 1 e largura - 1).*/
+void calcula_lbp(struct imagemPGM *img, struct imagemPGM *nova, int i, int j);
 
+/* Gera a imagem LBP a partir da imagem original */
+void gerar_lbp(struct imagemPGM *img, struct imagemPGM *nova);
 
+/*--------------------------------------------------------------------*/
+/* Funções de saída */
 
+/* Gera a imagem de saída no formato PGM */
+/* Formato de Saída: capaz de determinar o formato da imagem de entrada
+e gerar a saída correspondente no mesmo formato (P2 ou P5)*/
+void gerar_imagem_saida(struct imagemPGM *nova, FILE *arquivo_saida);
+
+/* Funções para histogramas */
+
+/* Define o histograma LBP a partir da imagem */
+/* Normalização do Histograma: garantindo que a contagem de pixels de cada tom seja dividida
+pelo total de pixels na imagem.*/
+void definir_histograma(char *arquivo_entrada, struct imagemPGM *img, struct LBPHistograma *histograma);
+
+/* Calcula a distância euclidiana entre histogramas LBP */
+void distancia_euclidiana_histLBP(struct LBPHistograma *aux, struct LBPHistograma *lbp_origem, struct LBPHistograma *lbp_comparar);
+
+/* Lê a estrutura LBP a partir de um arquivo */
+struct LBPHistograma *ler_estrutura_lbp(FILE *arquivo_lbp, struct LBPHistograma *histograma);
+
+/* Calcula a distância euclidiana entre histogramas de um diretório */
+void distancia_euclidiana_dir(char *nome_diretorio, struct LBPHistograma *histograma, double *distancia, char menor_distancia[256]);
+
+/*--------------------------------------------------------------------*/
+/* Funções de leitura de diretório */
+
+/* Lê todos os arquivos de um diretório */
+void ler_diretorio(char *nome_diretorio);
+
+/* Converte a imagem LBP a partir de um arquivo de entrada */
+void converter_lbp(char arquivo_entrada[256]);
+
+/* Função para liberar a memória alocada para a imagem */
+void liberar_memoria(struct imagemPGM *img);
+
+#endif /* LIB_H */
 
