@@ -1,29 +1,37 @@
-# Nome do executável em maiúsculas
-EXEC = LBP
+# Flags de compilação
+CFLAGS = -c -Wall -Wextra -std=c90 -g
+LDFLAGS = -lm
+ENTREGA = lbp-entrega
 
-# Compilador e flags
+# Compilador
 CC = gcc
-CFLAGS = -Wall -O2
 
-# Arquivos de origem e objetos
-SRCS = lbp.c lib.c
-OBJS = $(SRCS:.c=.o)
+# Arquivos-objeto
+objects = lbp.o lib.o
 
-# Regras principais
-all: $(EXEC)
+# Alvo principal
+all: LBP
 
-$(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+# Regra para gerar o executável LBP
+LBP: $(objects)
+	$(CC) -o LBP $(objects) $(LDFLAGS)
 
-# Regra para compilar os arquivos .c
-%.o: %.c lib.h
-	$(CC) $(CFLAGS) -c $< -o $@
+# Regras para compilar cada arquivo objeto
+lbp.o: lbp.c lib.h
+	$(CC) -c $(CFLAGS) lbp.c
 
-# Limpeza dos arquivos gerados
+lib.o: lib.c lib.h
+	$(CC) -c $(CFLAGS) lib.c
+
+# Regra para gerar o arquivo TGZ para entrega
+entrega: clean
+	mkdir $(ENTREGA)
+	cp *.c *.h Makefile $(ENTREGA)
+	chmod 600 $(ENTREGA)/*
+	tar czvf $(ENTREGA).tgz $(ENTREGA)
+	rm -rf $(ENTREGA)
+	@echo "Arquivo $(ENTREGA).tgz criado para entrega"
+
+# Regra de limpeza
 clean:
-	rm -f $(OBJS) $(EXEC)
-
-# Regra de limpeza completa
-cleanall: clean
-	rm -f $(EXEC)
-
+	rm -f $(objects) LBP
