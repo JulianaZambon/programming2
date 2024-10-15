@@ -16,10 +16,10 @@
 /* Funções para alocação de memória */
 
 /* Aloca memória para a imagem PGM */
-struct imagemPGM *alocar_imagem(int largura, int altura)
+struct imagemPGM *alocar_imagem()
 {
     struct imagemPGM *img = (struct imagemPGM *)malloc(sizeof(struct imagemPGM));
-    if (img == NULL)
+    if (!img)
     {
         fprintf(stderr, "Erro ao alocar memória para a imagem\n");
         exit(EXIT_FAILURE);
@@ -27,6 +27,7 @@ struct imagemPGM *alocar_imagem(int largura, int altura)
 
     img->largura = 0;
     img->altura = 0;
+    img->maximo = 0;
     img->pixels = NULL; /* ponteiro inicializa nulo */
     img->tipo[0] = 'P';
     img->tipo[1] = '0';
@@ -56,30 +57,32 @@ struct LBPHistograma *alocar_histograma()
 }
 
 /* Aloca memória para os pixels da imagem */
-unsigned char **alocar_pixels(int largura, int altura)
+void alocar_pixels(struct imagemPGM *img)
 {
     /* aloca memória para cada linha */
-    unsigned char **pixels = (unsigned char **)malloc(altura * sizeof(unsigned char *));
+    img->pixels = (unsigned char **)malloc(img->altura * sizeof(unsigned char *));
 
-    if (pixels == NULL)
+    if (img->pixels == NULL)
     {
         fprintf(stderr, "Erro ao alocar memória para os pixels\n");
         exit(EXIT_FAILURE);
     }
 
-    int i;
+    int i, j;
     /* aloca memória para cada coluna da imagem */
-    for (i = 0; i < altura; i++)
+    for (i = 0; i < img->altura; i++)
     {
-        pixels[i] = (unsigned char *)malloc(largura * sizeof(unsigned char));
-        if (pixels[i] == NULL)
+        img->pixels[i] = (unsigned char *)malloc(img->largura * sizeof(unsigned char));
+        if (img->pixels[i] == NULL)
         {
             fprintf(stderr, "Erro ao alocar memória para os pixels\n");
             exit(EXIT_FAILURE);
         }
+        for (j = 0; j < img->largura; j++)
+        {
+            img->pixels[i][j] = 0;
+        }
     }
-
-    return pixels;
 }
 
 /*--------------------------------------------------------------------*/
@@ -87,34 +90,32 @@ unsigned char **alocar_pixels(int largura, int altura)
 
 /* Ignorar Linhas de Comentário: garantir que os comentários
 (linhas que começam com #) sejam ignorados ao ler arquivos P2 e P5*/
-// void ignorar_comentarios(FILE *arquivo)
-// {
-//     char c = fgetc(arquivo);
-//     while (c == '#')
-//     {
-//         while (fgetc(arquivo) != '\n')
-//             ;
-//         c = fgetc(arquivo);
-//     }
-//     /* volta um caractere */
-//     fseek(arquivo, -1, SEEK_CUR);
-// }
+/*void ignorar_comentarios(FILE *arquivo)
+{
+    char c = fgetc(arquivo);
+    while (c == '#')
+    {
+        while (fgetc(arquivo) != '\n')
+            ;
+        c = fgetc(arquivo);
+    }
+}*/
 
 /* Preenche a matriz de pixels para o formato P2 */
 /* deve usar a função ignorar_comentarios */
 struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img)
 {
-    // ignorar_comentarios(arquivo);
+    /* ignorar_comentarios(arquivo); */
 
-    int i, j;
+    int i, j, aux;
     for (i = 0; i < img->altura; i++)
     {
         for (j = 0; j < img->largura; j++)
         {
-            fscanf(arquivo, "%d", &img->pixels[i][j]);
+            fscanf(arquivo, "%d", &aux);
+            img->pixels[i][j] = aux;
         }
     }
-
     return img;
 }
 
@@ -122,14 +123,16 @@ struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img)
 /* ler caractere */
 struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img)
 {
-    // ignorar_comentarios(arquivo);
-
+    /* ignorar_comentarios(arquivo); */
+    unsigned char aux;
     int i, j;
-    for (i = 0; i < img->altura; i++)
+
+    for (i = 0; i < (img->altura); i++)
     {
-        for (j = 0; j < img->largura; j++)
+        for (j = 0; j < (img->largura); j++)
         {
-            fscanf(arquivo, "%c", &img->pixels[i][j]);
+            fscanf(arquivo, "%c", &aux);
+            img->pixels[i][j] = aux;
         }
     }
 
@@ -137,26 +140,33 @@ struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img)
 }
 
 /* Função para ler a imagem PGM */
-struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *tipo)
+struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo_entrada)
 {
-    /* ler o cabeçalho ignorando os comentarios */
-    // ignorar_comentarios();
 
+    /* ler o cabeçalho ignorando os comentarios */
+    /* ignorarcomentarios(); */
 
     /* ler o cabeçalho da imagem */
     /* são 3 linhas */
-    fscanf (arquivo, "%s", img->tipo);
-    fscanf (arquivo, "%d %d", img->largura, img->altura);
-    fscanf (arquivo, "%d", img->maximo);
 
-    /* para testar */
-    printf("%d\n", img->maximo);
-
-    if (strcmp(tipo, "P2") == 0)
+    if (!arquivo)
     {
-        img = preencher_pixels_P2(arquivo, img);
+        printf("Erro ao abrir o arquivo de entrada\n");
+        exit(0);
     }
-    else if (strcmp(tipo, "P5") == 0)
+
+    fscanf(arquivo, "%s", &(img->tipo));
+    fscanf(arquivo, "%d %d", &(img->largura), &(img->altura));
+    fscanf(arquivo, "%d", &(img->maximo));
+
+    alocar_pixels(img);
+    getc(arquivo);
+
+    if (strstr(img->tipo, "P2") != 0)
+    {
+        /*img = preencher_pixels_P2(arquivo, img);*/
+    }
+    else if (strstr(img->tipo, "P5") != 0)
     {
         img = preencher_pixels_P5(arquivo, img);
     }
@@ -230,6 +240,12 @@ void liberar_imagem(struct imagemPGM *img)
     }
     free(img->pixels);
     free(img);
+}
+
+/* Libera a memória alocada para um histograma LBP */
+void liberar_histograma(struct LBPHistograma *histograma)
+{
+    free(histograma);
 }
 
 /* Libera a memória alocada para um histograma LBP */
