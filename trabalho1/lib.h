@@ -15,6 +15,7 @@ struct imagemPGM
     int altura;             /* Altura da imagem em pixels */
     int maximo;             /* Valor máximo de cinza (branco) */
     unsigned char **pixels; /* Matriz de pixels (valores de 0 a 255) */
+    char tipo[2];           /* Tipo da imagem (P2 ou P5) */
 };
 
 /* Estrutura para armazenar o histograma LBP */
@@ -28,7 +29,7 @@ struct LBPHistograma
 /* Funções para alocação de memória */
 
 /* Aloca memória para a imagem PGM */
-struct imagemPGM *alocar_imagem(int largura, int altura);
+struct imagemPGM *alocar_imagem();
 
 /* Aloca memória para o histograma LBP */
 struct LBPHistograma *alocar_histograma();
@@ -56,7 +57,7 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *tipo);
 /* Funções para processamento LBP */
 
 /* Inicializa uma nova imagem para armazenar o resultado do LBP */
-void nova_imagem_inicializa(struct imagemPGM *img, struct imagemPGM *nova);
+void inicializar_nova_imagem(struct imagemPGM *nova_img, int largura, int altura);
 
 /* Calcula o LBP para um pixel específico da imagem */
 /* Remover Bordas Durante a Convolução: garantir que as bordas da imagem original não sejam processadas.
@@ -67,40 +68,48 @@ void calcula_lbp(struct imagemPGM *img, struct imagemPGM *nova, int i, int j);
 void gerar_lbp(struct imagemPGM *img, struct imagemPGM *nova);
 
 /*--------------------------------------------------------------------*/
-/* Funções de saída */
+/* Funções de entrada e saída */
 
 /* Gera a imagem de saída no formato PGM */
 /* Formato de Saída: capaz de determinar o formato da imagem de entrada
 e gerar a saída correspondente no mesmo formato (P2 ou P5)*/
 void gerar_imagem_saida(struct imagemPGM *nova, FILE *arquivo_saida);
 
+/*--------------------------------------------------------------------*/
 /* Funções para histogramas */
 
-/* Define o histograma LBP a partir da imagem */
+/* Gera o histograma LBP de uma imagem */
 /* Normalização do Histograma: garantindo que a contagem de pixels de cada tom seja dividida
 pelo total de pixels na imagem.*/
-void definir_histograma(char *arquivo_entrada, struct imagemPGM *img, struct LBPHistograma *histograma);
+void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *histograma);
 
-/* Calcula a distância euclidiana entre histogramas LBP */
-void distancia_euclidiana_histLBP(struct LBPHistograma *aux, struct LBPHistograma *lbp_origem, struct LBPHistograma *lbp_comparar);
+/* Calcula a distância euclidiana entre dois histogramas LBP */
+double distancia_euclidiana_hist(struct LBPHistograma *hist1, struct LBPHistograma *hist2);
 
-/* Lê a estrutura LBP a partir de um arquivo */
-struct LBPHistograma *ler_estrutura_lbp(FILE *arquivo_lbp, struct LBPHistograma *histograma);
+/* Lê um histograma LBP a partir de um arquivo binário */
+struct LBPHistograma *ler_histograma_bin(FILE *arquivo, struct LBPHistograma *histograma);
 
-/* Calcula a distância euclidiana entre histogramas de um diretório */
-void distancia_euclidiana_dir(char *nome_diretorio, struct LBPHistograma *histograma, double *distancia, char menor_distancia[256]);
+/* Escreve um histograma LBP em um arquivo binário */
+void escrever_histograma_bin(FILE *arquivo, struct LBPHistograma *histograma);
 
 /*--------------------------------------------------------------------*/
 /* Funções de leitura de diretório */
 
-/* Lê todos os arquivos de um diretório */
-void ler_diretorio(char *nome_diretorio);
+/* Lê o conteúdo de um diretório e retorna uma lista de arquivos de imagem */
+void ler_diretorio(char *nome_diretorio, char lista_arquivos[][256], int *num_arquivos);
 
-/* Converte a imagem LBP a partir de um arquivo de entrada */
-void converter_lbp(char arquivo_entrada[256]);
+/* Compara uma imagem de teste com todas as imagens LBP da base de referência */
+void comparar_imagens(char *diretorio, struct LBPHistograma *histograma_teste, char *img_mais_similar, double *menor_distancia);
 
-/* Função para liberar a memória alocada para a imagem */
-void liberar_memoria(struct imagemPGM *img);
+/*--------------------------------------------------------------------*/
+/* Funções utilitárias */
+
+/* Libera a memória alocada para uma imagem PGM */
+void liberar_imagem(struct imagemPGM *img);
+
+/* Libera a memória alocada para um histograma LBP */
+void liberar_histograma(struct LBPHistograma *histograma);
 
 #endif /* LIB_H */
+
 
