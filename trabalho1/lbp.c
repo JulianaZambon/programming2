@@ -16,57 +16,57 @@ int main(int argc, char *argv[])
     char *arquivo_entrada = NULL;
     char *diretorio = NULL;
     char *arquivo_saida = NULL;
+    FILE *arquivo = NULL;
 
     while ((opt = getopt(argc, argv, "d:i:o:")) != -1)
     {
         switch (opt)
         {
-        case 'd':
+        /*case 'd':
             diretorio = strdup(optarg);
-            break;
+            break;*/
         case 'i':
-            arquivo_entrada = strdup(optarg);
+            arquivo_entrada = optarg;
             break;
-        case 'o':
+        /*case 'o':
             arquivo_saida = strdup(optarg);
-            break;
+            break;*/
         default:
             fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
-            exit(EXIT_FAILURE);
+            exit(1);
         }
     }
 
-    if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
+    /*if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
     {
         fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
         exit(EXIT_FAILURE);
-    }
+    }*/
 
     /* Lê o arquivo de entrada */
-    FILE *arquivo = fopen(arquivo_entrada, "r"); /* r = read */
+    
+    arquivo = fopen(arquivo_entrada, "r"); /* r = read */
+    
     if (arquivo == NULL)
     {
         fprintf(stderr, "Erro ao abrir o arquivo de entrada\n");
-        exit(EXIT_FAILURE);
+        free(arquivo_entrada);
+        exit(1);
     }
-
-    /* Lê o cabeçalho da imagem 
-    char tipo[2];
-    fscanf(arquivo, "%s", tipo);
-
-    /* Lê a largura e a altura da imagem 
-    int largura, altura;
-    fscanf(arquivo, "%d %d", &largura, &altura);
-
-    /* Lê o valor máximo de cinza 
-    int maximo;
-    fscanf(arquivo, "%d", &maximo);
 
     /* Aloca memória para a imagem */
     struct imagemPGM *img = alocar_imagem();
 
+    if (img == NULL)
+    {
+        fprintf(stderr, "Erro \n");
+        exit(1);
+    }
+
     /* Lê a imagem */
+
     img = ler_imagem(arquivo, img, arquivo_entrada);
+    
 
     /* Comparar uma imagem de teste com todas as imagens da base de referência */
     /*  A saída deve ser EXATAMENTE a seguinte
@@ -92,5 +92,5 @@ int main(int argc, char *argv[])
      com o nome informado pela opção -o. NENHUMA saída é esperada no terminal; caso
      algum erro ocorra, basta não criar a imagem de saída.
     */
+   return 0;
 }
-
