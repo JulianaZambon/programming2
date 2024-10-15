@@ -22,13 +22,13 @@ int main(int argc, char *argv[])
         switch (opt)
         {
         case 'd':
-            diretorio = optarg;
+            diretorio = strdup(optarg);
             break;
         case 'i':
-            arquivo_entrada = optarg;
+            arquivo_entrada = strdup(optarg);
             break;
         case 'o':
-            arquivo_saida = optarg;
+            arquivo_saida = strdup(optarg);
             break;
         default:
             fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
@@ -50,23 +50,23 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    /* Lê o cabeçalho da imagem */
-    char tipo[3];
+    /* Lê o cabeçalho da imagem 
+    char tipo[2];
     fscanf(arquivo, "%s", tipo);
 
-    /* Lê a largura e a altura da imagem */
+    /* Lê a largura e a altura da imagem 
     int largura, altura;
     fscanf(arquivo, "%d %d", &largura, &altura);
 
-    /* Lê o valor máximo de cinza */
+    /* Lê o valor máximo de cinza 
     int maximo;
     fscanf(arquivo, "%d", &maximo);
 
     /* Aloca memória para a imagem */
-    struct imagemPGM *img = alocar_imagem(largura, altura);
+    struct imagemPGM *img = alocar_imagem();
 
     /* Lê a imagem */
-    img = ler_imagem(arquivo, img, tipo);
+    img = ler_imagem(arquivo, img, arquivo_entrada);
 
     /* Comparar uma imagem de teste com todas as imagens da base de referência */
     /*  A saída deve ser EXATAMENTE a seguinte
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     */
 
     /* Exibir a imagem mais similar e a distância */
-    printf("Imagem mais similar: %s %.6f\n",
+    /* printf("Imagem mais similar: %s %.6f\n", img_similar, distancia); */
 
     /*
         em que <img mais similar> é a imagem com a menor distância Euclidiana encontrada
@@ -93,3 +93,4 @@ int main(int argc, char *argv[])
      algum erro ocorra, basta não criar a imagem de saída.
     */
 }
+
