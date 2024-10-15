@@ -13,39 +13,40 @@
 int main(int argc, char *argv[])
 {
     int opt;
-    char *file_in = NULL;
-    char *directory = NULL;
-    char *file_out = NULL;
+    char *arquivo_entrada = NULL;
+    char *diretorio = NULL;
+    char *arquivo_saida = NULL;
 
     while ((opt = getopt(argc, argv, "d:i:o:")) != -1)
     {
         switch (opt)
         {
         case 'd':
-            directory = strdup(optarg);
+            diretorio = optarg;
             break;
         case 'i':
-            file_in = strdup(optarg);
+            arquivo_entrada = optarg;
             break;
         case 'o':
-            file_out = strdup(optarg);
+            arquivo_saida = optarg;
             break;
         default:
-            fprintf(stderr, "Forma de uso: ./lbp -d ./base -i img1.tif\n");
-            exit(1);
+            fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
+            exit(EXIT_FAILURE);
         }
     }
 
-    if (!file_in || !directory)
+    if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
     {
-        fprintf(stderr, "Forma de uso: ./lbp -d ./base -i img1.tif\n");
-        exit(1);
+        fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
 
-    FILE *arquivo = fopen(file_in, "r");
+    /* Lê o arquivo de entrada */
+    FILE *arquivo = fopen(arquivo_entrada, "r"); /* r = read */
     if (arquivo == NULL)
     {
-        fprintf(stderr, "Erro ao abrir o arquivo: %s\n", file_in);
+        fprintf(stderr, "Erro ao abrir o arquivo de entrada\n");
         exit(EXIT_FAILURE);
     }
 
@@ -67,55 +68,28 @@ int main(int argc, char *argv[])
     /* Lê a imagem */
     img = ler_imagem(arquivo, img, tipo);
 
-    /* Inicializa a nova imagem */
-    struct imagemPGM *nova = alocar_imagem(largura - 2, altura - 2);
+    /* Comparar uma imagem de teste com todas as imagens da base de referência */
+    /*  A saída deve ser EXATAMENTE a seguinte
+        Imagem mais similar: <img mais similar> <distância>
+    */
 
-    /* Gera a imagem LBP */
-    gerar_lbp(img, nova);
+    /* Exibir a imagem mais similar e a distância */
+    printf("Imagem mais similar: %s %.6f\n",
 
-    /* Gera o nome do arquivo de saída */
-    if (!file_out)
-    {
-        file_out = (char *)malloc(strlen(file_in) + 5);
-        snprintf(file_out, strlen(file_in) + 5, "lbp_%s", file_in);
-    }
+    /*
+        em que <img mais similar> é a imagem com a menor distância Euclidiana encontrada
+        no diretório ./base (informar apenas o nome do arquivo com sua extensão) e
+        <distância> é o valor da distância associada a esta imagem, um número com
+        EXATAMENTE 6 casas decimais. Nome e valor devem ser separados APENAS por
+        um espaço.
+    */
 
-    FILE *arquivo_saida = fopen(file_out, "w");
-
-    if (arquivo_saida == NULL)
-    {
-        fprintf(stderr, "Erro ao abrir o arquivo de saída: %s\n", file_out);
-        exit(EXIT_FAILURE);
-    }
-
-    /* Escreve o cabeçalho da imagem */
-    fprintf(arquivo_saida, "%s\n", tipo);
-    fprintf(arquivo_saida, "%d %d\n", nova->largura, nova->altura);
-    fprintf(arquivo_saida, "%d\n", maximo);
-
-    /* Escreve a imagem */
-    int i, j;
-    for (i = 0; i < nova->altura; i++)
-    {
-        for (j = 0; j < nova->largura; j++)
-        {
-            fprintf(arquivo_saida, "%hhu ", nova->pixels[i][j]);
-        }
-
-        fprintf(arquivo_saida, "\n");
-    }
-
-    fclose(arquivo_saida);
-    if (directory)
-    {
-        struct LBPHistograma *histograma = alocar_histograma();
-        double distancia;
-        char menor_distancia[256];
-
-        distancia_euclidiana_dir(directory, histograma, &distancia, menor_distancia);
-    }
-
-    fclose(arquivo);
-
-    return 0;
+    /* Gerar a imagem LBP */
+    /*
+     Exemplo:
+     ./lbp -i img1.tif -o img_out.tif
+     Nesse caso, o programa recebe como entrar imagem img1.tif e gerar a imagem LPB
+     com o nome informado pela opção -o. NENHUMA saída é esperada no terminal; caso
+     algum erro ocorra, basta não criar a imagem de saída.
+    */
 }
