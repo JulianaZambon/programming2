@@ -247,9 +247,3 @@ void liberar_histograma(struct LBPHistograma *histograma)
 {
     free(histograma);
 }
-
-/* Libera a memória alocada para um histograma LBP */
-void liberar_histograma(struct LBPHistograma *histograma)
-{
-    free(histograma);
-}
