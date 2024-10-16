@@ -217,15 +217,102 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo
 /* Funções para processamento LBP */
 
 /* Inicializa uma nova imagem para armazenar o resultado do LBP */
-void inicializar_nova_imagem(struct imagemPGM *nova_img, int largura, int altura);
+void inicializar_nova_imagem(struct imagemPGM *nova_imagem, struct imagemPGM *imagemPGM)
+{
+    /* Verifica se a nova imagem foi alocada corretamente */
+    if (nova_imagem == NULL)
+    {
+        fprintf(stderr, "Erro ao alocar memória para a nova imagem\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Copia as informações básicas da imagem original */
+    strcpy(nova_imagem->tipo, imagemPGM->tipo);
+    nova_imagem->largura = imagemPGM->largura;
+    nova_imagem->altura = imagemPGM->altura;
+    nova_imagem->maximo = imagemPGM->maximo;
+
+    /* Aloca memória para os pixels da nova imagem */
+    alocar_pixels(nova_imagem);
+    if (nova_imagem->pixels == NULL)
+    {
+        fprintf(stderr, "Erro ao alocar pixels\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* Calcula o LBP para um pixel específico da imagem */
 /* Remover Bordas Durante a Convolução: garantir que as bordas da imagem original não sejam processadas.
 Assegurando que o cálculo comece após as bordas (por exemplo, começando de 1 até altura - 1 e largura - 1).*/
-void calcula_lbp(struct imagemPGM *img, struct imagemPGM *nova, int i, int j);
+void calcula_lbp(struct imagemPGM *img, struct imagemPGM *nova_imagem, int i, int j)
+{
+    int aux[3][3]; /* Matriz auxiliar para armazenar o resultado da comparação binária */
+    int mult = 1;  /* Inicializa o multiplicador binário */
+    int sum = 0;   /* Acumulador para armazenar a soma final (valor LBP) */
+
+    /* Aplicar a máscara com valores 2^n para os vizinhos */
+    for (int lin = 0; lin < 3; lin++)
+    {
+        for (int col = 0; col < 3; col++)
+        {
+            /* Ignorar o pixel central */
+            if (lin == 1 && col == 1)
+            {
+                aux[lin][col] = 0; /* O pixel central não é comparado */
+                continue;
+            }
+
+            /* Comparar o pixel vizinho com o pixel central */
+            if (img->pixels[(i + lin) - 1][(j + col) - 1] >= img->pixels[i][j])
+            {
+                aux[lin][col] = 1; /* Atribui 1 se o vizinho for maior ou igual */
+            }
+            else
+            {
+                aux[lin][col] = 0; /* Atribui 0 se for menor */
+            }
+
+            /* Aplicar o peso binário (2^n) com base na posição do vizinho */
+            aux[lin][col] *= mult;
+            mult *= 2; /* Aumenta o peso binário para o próximo vizinho */
+        }
+    }
+
+    /* Calcular a soma final dos valores binários (LBP) */
+    for (int lin = 0; lin < 3; lin++)
+    {
+        for (int col = 0; col < 3; col++)
+        {
+            sum += aux[lin][col]; /* Soma os valores binários ponderados */
+        }
+    }
+
+    /* Armazenar o valor LBP no pixel correspondente na nova imagem */
+    nova_imagem->pixels[i][j] = sum;
+}
 
 /* Gera a imagem LBP a partir da imagem original */
-void gerar_lbp(struct imagemPGM *img, struct imagemPGM *nova);
+void gerar_lbp(struct imagemPGM *img, struct imagemPGM *nova)
+{
+    /* Verifica se a imagem foi alocada corretamente */
+    if (img == NULL || nova == NULL)
+    {
+        fprintf(stderr, "Erro ao alocar memória para a imagem\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Inicializa a nova imagem */
+    inicializar_nova_imagem(nova, img);
+
+    /* Calcula o LBP para cada pixel da imagem */
+    for (int i = 1; i < img->altura - 1; i++)
+    {
+        for (int j = 1; j < img->largura - 1; j++)
+        {
+            calcula_lbp(img, nova, i, j);
+        }
+    }
+}
 
 /*--------------------------------------------------------------------*/
 /* Funções de entrada e saída */
@@ -233,33 +320,342 @@ void gerar_lbp(struct imagemPGM *img, struct imagemPGM *nova);
 /* Gera a imagem de saída no formato PGM */
 /* Formato de Saída: capaz de determinar o formato da imagem de entrada
 e gerar a saída correspondente no mesmo formato (P2 ou P5)*/
-void gerar_imagem_saida(struct imagemPGM *nova, FILE *arquivo_saida);
+void gerar_imagem_saida(struct imagemPGM *nova, FILE *arquivo_saida)
+{
+    /* Escreve o cabeçalho da imagem */
+    fprintf(arquivo_saida, "P%c\n", nova->tipo[1]); /* "P2" ou "P5" */
+    fprintf(arquivo_saida, "%d %d\n", nova->largura, nova->altura);
+    fprintf(arquivo_saida, "%d\n", nova->maximo);
 
+    /* Verifica o tipo da imagem para decidir como escrever os pixels */
+    if (nova->tipo[1] == '2') /* Formato P2 (ASCII) */
+    {
+        /* Escreve os pixels no formato de texto (P2) */
+        for (int i = 0; i < nova->altura; i++)
+        {
+            for (int j = 0; j < nova->largura; j++)
+            {
+                /* Escreve os pixels separados por espaço ou nova linha, para legibilidade */
+                fprintf(arquivo_saida, "%d ", nova->pixels[i][j]);
+            }
+            fprintf(arquivo_saida, "\n"); // Quebra de linha após cada linha de pixels
+        }
+    }
+    else if (nova->tipo[1] == '5') /* Formato P5 (Binário) */
+    {
+        /* Escreve os pixels no formato binário (P5) */
+        for (int i = 0; i < nova->altura; i++)
+        {
+            fwrite(nova->pixels[i], sizeof(unsigned char), nova->largura, arquivo_saida);
+        }
+    }
+    else
+    {
+        fprintf(stderr, "Erro: Formato de imagem desconhecido.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    fclose(arquivo_saida);
+}
 /*--------------------------------------------------------------------*/
 /* Funções para histogramas */
 
 /* Gera o histograma LBP de uma imagem */
 /* Normalização do Histograma: garantindo que a contagem de pixels de cada tom seja dividida
 pelo total de pixels na imagem.*/
-void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *histograma);
+/* Gera o histograma LBP de uma imagem com normalização */
+void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *lbp_hist, char *arquivo_entrada)
+{
+    /* Verifica se a imagem e o histograma foram alocados corretamente */
+    if (nova == NULL || lbp_hist == NULL)
+    {
+        fprintf(stderr, "Erro: memória não alocada para a imagem ou histograma\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Inicializa o histograma */
+    for (int i = 0; i < 256; i++)
+    {
+        lbp_hist->histograma[i] = 0;
+    }
+
+    /* Popula o histograma */
+    for (int i = 0; i < nova->altura; i++)
+    {
+        for (int j = 0; j < nova->largura; j++)
+        {
+            lbp_hist->histograma[nova->pixels[i][j]]++;
+        }
+    }
+
+    /* Normaliza o histograma */
+    double total_pixels = (double)(nova->altura * nova->largura);
+    for (int i = 0; i < 256; i++)
+    {
+        lbp_hist->histograma[i] /= total_pixels;
+    }
+
+    /* Gera o nome do arquivo de saída do histograma */
+    char nome_arquivo[128];
+    for (int i = 0; i < 128; i++) /* Preenche a string com zeros */
+    {
+        nome_arquivo[i] = '\0';
+    }
+    strcpy(nome_arquivo, arquivo_entrada); /* Copia o nome do arquivo de entrada */
+    strcat(nome_arquivo, ".lbp");          /* Adiciona a extensão do arquivo */
+
+    /* Abre o arquivo de saída do histograma */
+    FILE *arquivo_histograma = fopen(nome_arquivo, "w");
+    if (arquivo_histograma == NULL)
+    {
+        fprintf(stderr, "Erro ao abrir o arquivo de saída do histograma\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Escreve o histograma no arquivo */
+    for (int i = 0; i < 256; i++)
+    {
+        fprintf(arquivo_histograma, "%d", lbp_hist->histograma[i]);
+    }
+
+    fclose(arquivo_histograma);
+}
 
 /* Calcula a distância euclidiana entre dois histogramas LBP */
-double distancia_euclidiana_hist(struct LBPHistograma *hist1, struct LBPHistograma *hist2);
+double distancia_euclidiana(struct LBPHistograma *hist1, struct LBPHistograma *hist2, struct LBPHistograma *comparacao)
+{
+    if (hist1 == NULL || hist2 == NULL)
+    {
+        fprintf(stderr, "Erro: um dos histogramas não foi alocado corretamente.\n");
+        exit(EXIT_FAILURE);
+    }
 
-/* Lê um histograma LBP a partir de um arquivo binário */
-struct LBPHistograma *ler_histograma_bin(FILE *arquivo, struct LBPHistograma *histograma);
+    double distancia = 0.0;
 
-/* Escreve um histograma LBP em um arquivo binário */
-void escrever_histograma_bin(FILE *arquivo, struct LBPHistograma *histograma);
+    for (int i = 0; i < 256; i++)
+    {
+        /* Calcula o quadrado da diferença entre os valores dos histogramas */
+        double diferenca = hist1->histograma[i] - hist2->histograma[i];
+        distancia += diferenca * diferenca;
+    }
+
+    return sqrt(distancia);
+}
+
+/* Lê um histograma LBP a partir de um arquivo de texto */
+struct LBPHistograma *ler_histLBP(FILE *arquivo, struct LBPHistograma *histograma)
+{
+    if (arquivo == NULL)
+    {
+        fprintf(stderr, "Erro ao abrir o arquivo de histograma\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Lê os valores do histograma do arquivo de texto */
+    for (int h = 0; h < 256; h++)
+    {
+        if (fscanf(arquivo, "%d", &(histograma->histograma[h])) != 1)
+        {
+            fprintf(stderr, "Erro ao ler o valor do histograma no índice %d.\n", h);
+            return NULL;
+        }
+    }
+
+    return histograma;
+}
+
+/* Exibir a imagem mais similar e a distância */
+/* printf("Imagem mais similar: %s %.6f\n", img_similar, distancia); */
+void encontrar_imagem_similar(char *diretorio, struct LBPHistograma *histograma_teste, double *distancia, char menor_distancia[256])
+{
+    DIR *base;
+    FILE *arquivo_hist;
+    struct dirent *diretorio_base;
+    char caminho[256];
+
+    strcpy(caminho, diretorio);
+    base = opendir(diretorio);
+
+    if (base == NULL)
+    {
+        fprintf(stderr, "Não foi possível abrir o diretório.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    struct LBPHistograma *histograma_base = alocar_histograma();
+    struct LBPHistograma *histograma_comparacao = alocar_histograma();
+    double menor_distancia_atual = *distancia; /* Inicializa a menor distância com a distância atual */
+
+    while ((diretorio_base = readdir(base)) != NULL)
+    {
+        /* Ignora entradas '.' e '..' e verifica a extensão do arquivo */
+        if (diretorio_base->d_name[0] == '.' || strstr(diretorio_base->d_name, ".lbp") == NULL)
+            continue;
+
+        /* Monta o caminho completo para o arquivo */
+        snprintf(caminho, sizeof(caminho), "%s/%s", diretorio, diretorio_base->d_name);
+
+        arquivo_hist = fopen(caminho, "r");
+        if (arquivo_hist == NULL)
+        {
+            fprintf(stderr, "Não foi possível abrir o arquivo de histograma.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Lê o histograma do arquivo */
+        ler_histLBP(arquivo_hist, histograma_base);
+        distancia_euclidiana(histograma_teste, histograma_base, histograma_comparacao);
+
+        /* Verifica se a nova distância é menor que a atual */
+        if (histograma_comparacao->tamanho < menor_distancia_atual)
+        {
+            menor_distancia_atual = histograma_comparacao->tamanho;
+            strcpy(menor_distancia, diretorio_base->d_name);
+        }
+
+        fclose(arquivo_hist);
+    }
+
+    closedir(base);
+
+    /* Remove a extensão .lbp do nome da imagem mais similar */
+    char *ext = strstr(menor_distancia, ".lbp");
+    if (ext != NULL)
+    {
+        *ext = '\0';
+    }
+
+    *distancia = menor_distancia_atual;
+
+    /* Exibe a imagem mais similar e a distância */
+    printf("Imagem mais similar: %s %.6f\n", menor_distancia, *distancia);
+
+    free(histograma_comparacao);
+    free(histograma_base);
+}
 
 /*--------------------------------------------------------------------*/
 /* Funções de leitura de diretório */
 
-/* Lê o conteúdo de um diretório e retorna uma lista de arquivos de imagem */
-void ler_diretorio(char *nome_diretorio, char lista_arquivos[][256], int *num_arquivos);
+/* Lê o conteúdo de um diretório e executa uma operação em arquivos de imagem */
+void ler_diretorio(char *nome_diretorio)
+{
+    /* Verifica se nome_diretorio não é nulo */
+    if (nome_diretorio == NULL) {
+        fprintf(stderr, "Erro: nome_diretorio é nulo.\n");
+        exit(EXIT_FAILURE);
+    }
 
-/* Compara uma imagem de teste com todas as imagens LBP da base de referência */
-void comparar_imagens(char *diretorio, struct LBPHistograma *histograma_teste, char *img_mais_similar, double *menor_distancia);
+    DIR *diretorio_base;
+    struct dirent *arquivo;
+    char caminho[256];
+
+    /* Copia o nome do diretório para a variável caminho */
+    strncpy(caminho, nome_diretorio, sizeof(caminho) - 1);
+    caminho[sizeof(caminho) - 1] = '\0'; /* Garante que a string esteja terminada */
+
+    /* Abre o diretório */
+    diretorio_base = opendir(nome_diretorio);
+    if (diretorio_base == NULL)
+    {
+        fprintf(stderr, "Não foi possível abrir o diretório: %s\n", nome_diretorio);
+        exit(EXIT_FAILURE);
+    }
+
+    /* Lê a primeira entrada do diretório */
+    arquivo = readdir(diretorio_base);
+    if (arquivo == NULL)
+    {
+        fprintf(stderr, "Não foi possível ler o diretório: %s\n", nome_diretorio);
+        closedir(diretorio_base);
+        exit(EXIT_FAILURE);
+    }
+
+    /* Loop para ler as entradas do diretório */
+    while (arquivo)
+    {
+        /* Verifica se a entrada é um arquivo .lbp */
+        if (arquivo->d_name[0] != '.' && strstr(arquivo->d_name, ".lbp") == NULL)
+        {
+            /* Monta o caminho completo do arquivo */
+            snprintf(caminho + strlen(nome_diretorio), sizeof(caminho) - strlen(nome_diretorio), "/%s", arquivo->d_name);
+            converter_lbp(caminho);
+
+            /* Reinicializa o caminho para o diretório */
+            strncpy(caminho, nome_diretorio, sizeof(caminho) - 1);
+            caminho[sizeof(caminho) - 1] = '\0'; /* Garante que a string esteja terminada */
+        }
+
+        /* Lê a próxima entrada */
+        arquivo = readdir(diretorio_base);
+    }
+
+    closedir(diretorio_base);
+}
+
+/* Converte uma imagem PGM para o formato LBP */
+void converter_lbp(char arquivo_entrada[256])
+{
+    FILE *arq = fopen(arquivo_entrada, "r");
+    if (arq == NULL)
+    {
+        fprintf(stderr, "Erro ao abrir arquivo: %s\n", arquivo_entrada);
+        exit(EXIT_FAILURE);
+    }
+
+    /* Aloca estrutura para a imagem de entrada */
+    struct imagemPGM *img_entrada = alocar_imagem();
+    if (img_entrada == NULL)
+    {
+        fprintf(stderr, "Erro ao alocar memória para a imagem de entrada.\n");
+        fclose(arq);
+        exit(EXIT_FAILURE);
+    }
+
+    /* Lê a imagem do arquivo */
+    img_entrada = ler_imagem(arq, img_entrada, arquivo_entrada);
+    if (img_entrada == NULL)
+    {
+        fprintf(stderr, "Erro ao ler a imagem do arquivo", arquivo_entrada);
+        liberar_imagem(img_entrada);
+        fclose(arq);
+        exit(EXIT_FAILURE);
+    }
+
+    /* Aloca estrutura para a nova imagem */
+    struct imagemPGM *nova_imagem = alocar_imagem();
+    if (nova_imagem == NULL)
+    {
+        fprintf(stderr, "Erro ao alocar memória para a nova imagem.\n");
+        liberar_imagem(img_entrada);
+        fclose(arq);
+        exit(EXIT_FAILURE);
+    }
+
+    /* Inicializa a nova imagem e gera LBP */
+    inicializar_nova_imagem(img_entrada, nova_imagem);
+    gerar_lbp(img_entrada, nova_imagem);
+
+    /* Aloca estrutura para LBP */
+    struct LBPHistograma *lbp = alocar_histograma();
+    if (lbp == NULL)
+    {
+        fprintf(stderr, "Erro ao alocar memória para o histograma LBP.\n");
+        liberar_imagem(img_entrada);
+        liberar_imagem(nova_imagem);
+        fclose(arq);
+        exit(EXIT_FAILURE);
+    }
+
+    // Define o histograma
+    gerar_histograma(arquivo_entrada, nova_imagem, lbp);
+
+    // Libera memória
+    liberar_imagem(img_entrada);
+    liberar_imagem(nova_imagem);
+    free(lbp);
+    fclose(arq);
+}
 
 /*--------------------------------------------------------------------*/
 /* Funções utilitárias */
@@ -274,10 +670,4 @@ void liberar_imagem(struct imagemPGM *img)
     }
     free(img->pixels);
     free(img);
-}
-
-/* Libera a memória alocada para um histograma LBP */
-void liberar_histograma(struct LBPHistograma *histograma)
-{
-    free(histograma);
 }
