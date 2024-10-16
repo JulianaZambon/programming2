@@ -38,11 +38,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
-    {
-        fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
+    // if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
+    // {
+    //     fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
+    //     exit(EXIT_FAILURE);
+    // }
 
     /* Lê o arquivo de entrada */
     arquivo = fopen(arquivo_entrada, "r"); /* r = read */
