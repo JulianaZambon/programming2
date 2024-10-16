@@ -117,16 +117,17 @@ int main(int argc, char *argv[])
     /* percorre o diretório */
     double distancia = 1e12;
     char menor_distancia[256];
+    /* ERRO */
     ler_diretorio(diretorio);
-    encontrar_imagem_similar(diretorio, histograma, &distancia, menor_distancia);
+    // encontrar_imagem_similar(diretorio, histograma, &distancia, menor_distancia);
 
-    /* Libera a memória alocada */
-    free (arquivo_entrada);
-    free (arquivo_saida);
-    free (diretorio);
-    liberar_imagem(img);
-    liberar_imagem(nova_img);
-    free(histograma);
+    // /* Libera a memória alocada */
+    // free (arquivo_entrada);
+    // free (arquivo_saida);
+    // free (diretorio);
+    // liberar_imagem(img);
+    // liberar_imagem(nova_img);
+    // free(histograma);
 
     return 0;
 }
