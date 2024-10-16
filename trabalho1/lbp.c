@@ -117,7 +117,9 @@ int main(int argc, char *argv[])
     /* percorre o diretório */
     double distancia = 1e12;
     char menor_distancia[256];
-    /* ERRO */
+
+    
+    /* ERRO A PARTIR DAQUI */
     ler_diretorio(diretorio);
     // encontrar_imagem_similar(diretorio, histograma, &distancia, menor_distancia);
 
