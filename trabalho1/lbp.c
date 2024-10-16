@@ -17,36 +17,35 @@ int main(int argc, char *argv[])
     char *diretorio = NULL;
     char *arquivo_saida = NULL;
     FILE *arquivo = NULL;
+    int aux = 0;
 
     while ((opt = getopt(argc, argv, "d:i:o:")) != -1)
     {
         switch (opt)
         {
-        /*case 'd':
+        case 'd':
             diretorio = strdup(optarg);
-            break;*/
+            break;
         case 'i':
             arquivo_entrada = optarg;
             break;
-        /*case 'o':
+        case 'o':
             arquivo_saida = strdup(optarg);
-            break;*/
+            break;
         default:
             fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
             exit(1);
         }
     }
 
-    /*if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
+    if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
     {
         fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
         exit(EXIT_FAILURE);
-    }*/
+    }
 
     /* Lê o arquivo de entrada */
-    
     arquivo = fopen(arquivo_entrada, "r"); /* r = read */
-    
     if (arquivo == NULL)
     {
         fprintf(stderr, "Erro ao abrir o arquivo de entrada\n");
@@ -56,17 +55,44 @@ int main(int argc, char *argv[])
 
     /* Aloca memória para a imagem */
     struct imagemPGM *img = alocar_imagem();
-
+    /* Lê a imagem */
+    img = ler_imagem(arquivo, img, arquivo_entrada);
     if (img == NULL)
     {
-        fprintf(stderr, "Erro \n");
+        fprintf(stderr, "Erro ao ler a imagem\n");
+        free(arquivo_entrada);
+        fclose(arquivo);
         exit(1);
     }
 
-    /* Lê a imagem */
+    /* Aloca memória para a nova imagem */
+    struct imagemPGM *nova_img = alocar_imagem();
+    /* Inicializa a nova imagem */
+    inicializar_nova_imagem(nova_img, img);
 
-    img = ler_imagem(arquivo, img, arquivo_entrada);
-    
+    /* Gerar a imagem LBP */
+    /*
+     Exemplo:
+     ./lbp -i img1.tif -o img_out.tif
+     Nesse caso, o programa recebe como entrar imagem img1.tif e gerar a imagem LPB
+     com o nome informado pela opção -o. NENHUMA saída é esperada no terminal; caso
+     algum erro ocorra, basta não criar a imagem de saída.
+    */
+
+    /* Gera a imagem LBP */
+    gerar_lbp(img, nova_img);
+
+    /* Gera a imagem de saída */
+    if (aux)
+    {
+        FILE *arquivo_saida;
+        if (!(arquivo_saida = fopen(arquivo_saida, "wb"))) /* wb = write binary */
+        {
+            fprintf(stderr, "Erro ao abrir o arquivo de saída\n");
+            exit(EXIT_FAILURE);
+        }
+        gerar_imagem_saida(nova_img, arquivo_saida);
+    }
 
     /* Comparar uma imagem de teste com todas as imagens da base de referência */
     /*  A saída deve ser EXATAMENTE a seguinte
@@ -84,13 +110,23 @@ int main(int argc, char *argv[])
         um espaço.
     */
 
-    /* Gerar a imagem LBP */
-    /*
-     Exemplo:
-     ./lbp -i img1.tif -o img_out.tif
-     Nesse caso, o programa recebe como entrar imagem img1.tif e gerar a imagem LPB
-     com o nome informado pela opção -o. NENHUMA saída é esperada no terminal; caso
-     algum erro ocorra, basta não criar a imagem de saída.
-    */
-   return 0;
+    struct LBPHistograma *histograma = alocar_histograma();
+    gerar_histograma(nova_img, histograma, arquivo_entrada); 
+    fclose(arquivo); /* fecha o arquivo de entrada */
+
+    /* percorre o diretório */
+    double distancia = 1e12;
+    char menor_distancia[256];
+    ler_diretorio(diretorio);
+    encontrar_imagem_similar(diretorio, histograma, &distancia, menor_distancia);
+
+    /* Libera a memória alocada */
+    free (arquivo_entrada);
+    free (arquivo_saida);
+    free (diretorio);
+    liberar_imagem(img);
+    liberar_imagem(nova_img);
+    free(histograma);
+
+    return 0;
 }
