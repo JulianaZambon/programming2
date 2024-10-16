@@ -596,8 +596,9 @@ void ler_diretorio(char *nome_diretorio)
 /* Converte uma imagem PGM para o formato LBP */
 void converter_lbp(char arquivo_entrada[256])
 {
-    FILE *arq = fopen(arquivo_entrada, "r");
-    if (arq == NULL)
+    FILE *arquivo = NULL;
+    arquivo = fopen(arquivo_entrada, "r");
+    if (arquivo == NULL)
     {
         fprintf(stderr, "Erro ao abrir arquivo: %s\n", arquivo_entrada);
         exit(EXIT_FAILURE);
@@ -608,17 +609,17 @@ void converter_lbp(char arquivo_entrada[256])
     if (img_entrada == NULL)
     {
         fprintf(stderr, "Erro ao alocar memória para a imagem de entrada.\n");
-        fclose(arq);
+        fclose(arquivo);
         exit(EXIT_FAILURE);
     }
 
     /* Lê a imagem do arquivo */
-    img_entrada = ler_imagem(arq, img_entrada, arquivo_entrada);
+    img_entrada = ler_imagem(arquivo, img_entrada, arquivo_entrada);
     if (img_entrada == NULL)
     {
         fprintf(stderr, "Erro ao ler a imagem do arquivo", arquivo_entrada);
         liberar_imagem(img_entrada);
-        fclose(arq);
+        fclose(arquivo);
         exit(EXIT_FAILURE);
     }
 
@@ -628,7 +629,7 @@ void converter_lbp(char arquivo_entrada[256])
     {
         fprintf(stderr, "Erro ao alocar memória para a nova imagem.\n");
         liberar_imagem(img_entrada);
-        fclose(arq);
+        fclose(arquivo);
         exit(EXIT_FAILURE);
     }
 
@@ -643,18 +644,17 @@ void converter_lbp(char arquivo_entrada[256])
         fprintf(stderr, "Erro ao alocar memória para o histograma LBP.\n");
         liberar_imagem(img_entrada);
         liberar_imagem(nova_imagem);
-        fclose(arq);
+        fclose(arquivo);
         exit(EXIT_FAILURE);
     }
 
-    // Define o histograma
+    /* Gera o histograma LBP */
     gerar_histograma(arquivo_entrada, nova_imagem, lbp);
 
-    // Libera memória
     liberar_imagem(img_entrada);
     liberar_imagem(nova_imagem);
     free(lbp);
-    fclose(arq);
+    fclose(arquivo);
 }
 
 /*--------------------------------------------------------------------*/
