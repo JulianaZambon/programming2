@@ -157,7 +157,7 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo
     /* ler o cabeçalho ignorando os comentarios */
     /* ler a linha toda e verificar se encontra algum "# " se encontrar dá um continue pra próxima linha*/
     int estado = 0;
-    while (estado < 4)
+    while (estado < 3)
     {
         char buffer[256];
         fgets(buffer, 256, arquivo);
@@ -170,34 +170,30 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo
         if (estado == 0)
         {
             /* Ler o tipo da imagem (P2 ou P5) */
-            sscanf(buffer, "%s", img->tipo);
+            sscanf(buffer, "%s", &(img->tipo));
             estado++;
         }
-
         else if (estado == 1)
         {
             /* Ler a largura e a altura da imagem */
-            sscanf(buffer, "%d %d", img->largura, img->altura);
+            sscanf(buffer, "%d %d", &(img->largura), &(img->altura));
             estado++;
         }
         else if (estado == 2)
         {
             /* Ler o valor máximo de cinza */
-            sscanf(buffer, "%d", img->maximo);
+            sscanf(buffer, "%d", &(img->maximo));
             estado++;
         }
     }
 
-    // fscanf(arquivo, "%s", &(img->tipo));
-    // fscanf(arquivo, "%d %d", &(img->largura), &(img->altura));
-    // fscanf(arquivo, "%d", &(img->maximo));
-
-    // /* teste */
-    // printf("%s\n", img->tipo);
-    // printf("%d %d\n", img->largura, img->altura);
-    // printf("%d\n", img->maximo);
-
     alocar_pixels(img);
+    if (img->pixels == NULL)
+    {
+        fprintf(stderr, "Erro ao alocar pixels\n");
+        exit(EXIT_FAILURE);
+    }
+
     getc(arquivo);
 
     if (strstr(img->tipo, "P2") != 0)
