@@ -90,22 +90,27 @@ void alocar_pixels(struct imagemPGM *img)
 
 /* Ignorar Linhas de Comentário: garantir que os comentários
 (linhas que começam com #) sejam ignorados ao ler arquivos P2 e P5*/
-/*void ignorar_comentarios(FILE *arquivo)
+void ignorar_comentarios(FILE *arquivo)
 {
-    char c = fgetc(arquivo);
-    while (c == '#')
+    char linha[256]; // Buffer para armazenar uma linha temporariamente
+
+    while (fgets(linha, sizeof(linha), arquivo) != NULL)
     {
-        while (fgetc(arquivo) != '\n')
-            ;
-        c = fgetc(arquivo);
+        /* Verifica se a linha começa com '#' */
+        if (linha[0] != '#')
+        {
+            /* Se não for uma linha de comentário, volta o ponteiro ao início da linha */
+            fseek(arquivo, -strlen(linha + 1), SEEK_CUR);
+            break;
+        }
     }
-}*/
+}
 
 /* Preenche a matriz de pixels para o formato P2 */
 /* deve usar a função ignorar_comentarios */
 struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img)
 {
-    /* ignorar_comentarios(arquivo); */
+    ignorar_comentarios(arquivo);
 
     int i, j, aux;
     for (i = 0; i < img->altura; i++)
@@ -123,7 +128,8 @@ struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img)
 /* ler caractere */
 struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img)
 {
-    /* ignorar_comentarios(arquivo); */
+    ignorar_comentarios(arquivo);
+
     unsigned char aux;
     int i, j;
 
@@ -142,22 +148,54 @@ struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img)
 /* Função para ler a imagem PGM */
 struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo_entrada)
 {
-
-    /* ler o cabeçalho ignorando os comentarios */
-    /* ignorarcomentarios(); */
-
-    /* ler o cabeçalho da imagem */
-    /* são 3 linhas */
-
-    if (!arquivo)
+    if (arquivo == NULL)
     {
         printf("Erro ao abrir o arquivo de entrada\n");
         exit(0);
     }
 
-    fscanf(arquivo, "%s", &(img->tipo));
-    fscanf(arquivo, "%d %d", &(img->largura), &(img->altura));
-    fscanf(arquivo, "%d", &(img->maximo));
+    /* ler o cabeçalho ignorando os comentarios */
+    /* ler a linha toda e verificar se encontra algum "# " se encontrar dá um continue pra próxima linha*/
+    int estado = 0;
+    while (estado < 4)
+    {
+        char buffer[256];
+        fgets(buffer, 256, arquivo);
+        /* Ignorar comentários (linhas que começam com '#') */
+        if (buffer[0] == '#')
+        {
+            continue;
+        }
+
+        if (estado == 0)
+        {
+            /* Ler o tipo da imagem (P2 ou P5) */
+            sscanf(buffer, "%s", img->tipo);
+            estado++;
+        }
+
+        else if (estado == 1)
+        {
+            /* Ler a largura e a altura da imagem */
+            sscanf(buffer, "%d %d", img->largura, img->altura);
+            estado++;
+        }
+        else if (estado == 2)
+        {
+            /* Ler o valor máximo de cinza */
+            sscanf(buffer, "%d", img->maximo);
+            estado++;
+        }
+    }
+
+    // fscanf(arquivo, "%s", &(img->tipo));
+    // fscanf(arquivo, "%d %d", &(img->largura), &(img->altura));
+    // fscanf(arquivo, "%d", &(img->maximo));
+
+    // /* teste */
+    // printf("%s\n", img->tipo);
+    // printf("%d %d\n", img->largura, img->altura);
+    // printf("%d\n", img->maximo);
 
     alocar_pixels(img);
     getc(arquivo);
