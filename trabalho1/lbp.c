@@ -14,24 +14,24 @@ int main(int argc, char *argv[])
 {
     int opt;
     char *arquivo_entrada = NULL;
-    char *diretorio = NULL;
-    char *arquivo_saida = NULL;
+    // char *diretorio = NULL;
+    // char *arquivo_saida = NULL;
     FILE *arquivo = NULL;
-    int aux = 0;
+    // int aux = 0;
 
     while ((opt = getopt(argc, argv, "d:i:o:")) != -1)
     {
         switch (opt)
         {
-        case 'd':
-            diretorio = strdup(optarg);
-            break;
+        // case 'd':
+        //     diretorio = strdup(optarg);
+        //     break;
         case 'i':
             arquivo_entrada = optarg;
             break;
-        case 'o':
-            arquivo_saida = strdup(optarg);
-            break;
+        // case 'o':
+        //     arquivo_saida = optarg;
+        //     break;
         default:
             fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
             exit(1);
@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
 
     /* Aloca memória para a imagem */
     struct imagemPGM *img = alocar_imagem();
-    /* Lê a imagem */
-    img = ler_imagem(arquivo, img, arquivo_entrada);
+    // /* Lê a imagem */
+    img = ler_imagem(arquivo, img);
     if (img == NULL)
     {
         fprintf(stderr, "Erro ao ler a imagem\n");
@@ -82,17 +82,29 @@ int main(int argc, char *argv[])
     /* Gera a imagem LBP */
     gerar_lbp(img, nova_img);
 
+    // printf("gerando lbp:\n");
+
+    // for (int i = 0; i < nova_img->altura; i++)
+    // {
+    //     for (int j = 0; j < nova_img->largura; j++)
+    //     {
+    //         printf("%d ", nova_img->pixels[i][j]);
+    //     }
+    //     printf("\n");
+    // }
+
     /* Gera a imagem de saída */
-    if (aux)
-    {
-        FILE *arquivo_saida;
-        if (!(arquivo_saida = fopen(arquivo_saida, "wb"))) /* wb = write binary */
-        {
-            fprintf(stderr, "Erro ao abrir o arquivo de saída\n");
-            exit(EXIT_FAILURE);
-        }
-        gerar_imagem_saida(nova_img, arquivo_saida);
-    }
+    gerar_imagem_saida(nova_img, stdout);
+    // if (aux)
+    // {
+    //     FILE *arquivo_saida;
+    //     if (!(arquivo_saida = fopen(arquivo_saida, "wb"))) /* wb = write binary */
+    //     {
+    //         fprintf(stderr, "Erro ao abrir o arquivo de saída\n");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     gerar_imagem_saida(nova_img, arquivo_saida);
+    // }
 
     /* Comparar uma imagem de teste com todas as imagens da base de referência */
     /*  A saída deve ser EXATAMENTE a seguinte
@@ -110,18 +122,17 @@ int main(int argc, char *argv[])
         um espaço.
     */
 
-    struct LBPHistograma *histograma = alocar_histograma();
-    gerar_histograma(nova_img, histograma, arquivo_entrada); 
+    // struct LBPHistograma *histograma = alocar_histograma();
+    // gerar_histograma(nova_img, histograma, arquivo_entrada);
     fclose(arquivo); /* fecha o arquivo de entrada */
 
     /* percorre o diretório */
-    double distancia = 1e12;
-    char menor_distancia[256];
+    // double distancia = 1e12;
+    // char menor_distancia[256];
 
-    
     /* ERRO A PARTIR DAQUI */
-    ler_diretorio(diretorio);
-    // encontrar_imagem_similar(diretorio, histograma, &distancia, menor_distancia);
+    // ler_diretorio(diretorio);
+    //  encontrar_imagem_similar(diretorio, histograma, &distancia, menor_distancia);
 
     // /* Libera a memória alocada */
     // free (arquivo_entrada);
