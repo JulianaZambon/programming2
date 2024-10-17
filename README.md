@@ -1,15 +1,26 @@
-# Programação 02
-Uso de técnicas avançadas para desenvolvimento de software. Práticas de projetos de desenvolvimento de programas de média e alta complexidade.
+# Programação II (CI1002) - Trabalho Prático 01: Estratégias de Comparação de Imagens
 
-## Trabalho 01
-Estratégias de Comparação de Imagens
+**Autora:** Juliana Zambon (jz22), GRR20224168
 
-O que deve ser implementado:
-Você deve escrever um programa em C, chamado lbp que implemente as seguintes funcionalidades:
-### 1) Comparar uma imagem de teste com todas as imagens da base de referência
-O cálculo do LBP é a parte mais custosa do processo. Em função disso, você deverá realizar esse cálculo uma única vez para todas as imagens da base de referência. O vetor LBP deve ser armazenado em um arquivo binário que deve ter o mesmo nome da imagem, mas com extensão .lbp. Por exemplo, para a imagem img1.tif, o arquivo deverá ser img1.lbp.
-Toda vez que o programa for executado, você deverá procurar pelo arquivo binário para calcular a distância com a imagem de teste. Caso ele não exista, você deve ler a
-imagem, calcular o LBP e gravar o vetor LBP no arquivo binário.
+Este repositório contém o código desenvolvido para o Trabalho Prático 01 da disciplina **CI1002 - Programação II**,
+oferecida pelo Departamento de Informática da Universidade Federal do Paraná (UFPR).
 
-### 2) Gerar a imagem LBP 
-Nesse caso, o programa recebe como entrar imagem img1.tif e gerar a imagem LPB com o nome informado pela opção -o. NENHUMA saída é esperada no terminal; caso algum erro ocorra, basta não criar a imagem de saída.
+## Descrição
+
+O objetivo deste trabalho é implementar um programa em C capaz de comparar uma imagem de teste com um conjunto de
+imagens de referência e identificar a imagem mais similar utilizando a **Distância Euclidiana**.
+Além disso, o programa gera uma imagem baseada na técnica **Local Binary Pattern (LBP)**.
+
+## Funcionalidades
+
+- **Comparação de Imagens:** O programa compara a imagem de teste com todas as imagens da base de referência e retorna
+a imagem com a menor distância Euclidiana encontrada.
+- **Geração de Imagem LBP:** O programa também gera a imagem LBP da imagem de teste.
+
+## Estrutura
+
+O código-fonte está estruturado em arquivos `.c` e `.h` que agrupam as funcionalidades, sendo `lbp.c` o arquivo principal de aplicação, `lib.c` o arquivo de implementação, e `lib.h` o arquivo de cabeçalho.
+
+## Arquivo Cabeçalho (lib.h)
+
+O arquivo `lib.h` contém as estruturas e protótipos de funções necessárias para o processamento de imagens no formato PGM e para o cálculo do histograma LBP. Ele define as funções responsáveis por ler, manipular e comparar as imagens, bem como gerar o vetor LBP e realizar as operações relacionadas à distância Euclidiana.
