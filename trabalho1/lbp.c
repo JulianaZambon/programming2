@@ -26,10 +26,10 @@ int main(int argc, char *argv[])
             diretorio = strdup(optarg);
             break;
         case 'i':
-            arquivo_entrada = optarg;
+            arquivo_entrada = strdup(optarg);
             break;
         case 'o':
-            arquivo_saida = optarg;
+            arquivo_saida = strdup(optarg);
             break;
         default:
             fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     arquivo = fopen(arquivo_entrada, "r"); /* r = read */
     if (arquivo == NULL)
     {
-        fprintf(stderr, "Erro ao abrir o arquivo de entrada\n");
+        fprintf(stderr, "Erro ao abrir o arquivo de entrada (main) \n");
         free(arquivo_entrada);
         exit(1);
     }
@@ -64,12 +64,14 @@ int main(int argc, char *argv[])
 
     /* Inicializa a nova imagem */
     inicializar_nova_imagem(nova_img, img);
-
-    /* Gera a imagem LBP */
+    
     gerar_lbp(img, nova_img);
+
+
     /* Abre o arquivo de saída */
     /* gerar a imagem LPB com o nome informado pela opção -o */
-    FILE *arquivo_saida_ptr = fopen("arquivo_lbp.pgm", "wb"); /* w = write, b = binary */
+    FILE *arquivo_saida_ptr = fopen(arquivo_saida, "wb");
+
     if (arquivo_saida_ptr == NULL)
     {
         fprintf(stderr, "Erro ao abrir o arquivo de saída\n");
@@ -77,6 +79,7 @@ int main(int argc, char *argv[])
         fclose(arquivo);
         exit(EXIT_FAILURE);
     }
+    /* Gera a imagem LBP */
     gerar_imagem_saida(nova_img, arquivo_saida_ptr);
 
     /*  Comparar uma imagem de teste com todas as imagens da base de referência
@@ -91,14 +94,12 @@ int main(int argc, char *argv[])
     /* percorre o diretório */
     double distancia = 1e12;
     char menor_distancia[256];
-    ler_diretorio(diretorio);
+    ler_diretorio(diretorio); 
 
     /* Exibir a imagem mais similar e a distância */
     encontrar_imagem_similar(diretorio, histograma, &distancia, menor_distancia);
 
     /* Libera a memória alocada */
-    free(arquivo_entrada);
-    free(arquivo_saida);
     free(diretorio);
     liberar_imagem(img);
     liberar_imagem(nova_img);
