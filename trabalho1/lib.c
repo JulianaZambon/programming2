@@ -92,7 +92,7 @@ void alocar_pixels(struct imagemPGM *img)
 (linhas que começam com #) sejam ignorados ao ler arquivos P2 e P5*/
 void ignorar_comentarios(FILE *arquivo)
 {
-    char linha[256]; // Buffer para armazenar uma linha temporariamente
+    char linha[256]; /* Buffer para armazenar uma linha temporariamente */
 
     while (fgets(linha, sizeof(linha), arquivo) != NULL)
     {
@@ -107,7 +107,7 @@ void ignorar_comentarios(FILE *arquivo)
 }
 
 /* Preenche a matriz de pixels para o formato P2 */
-/* deve usar a função ignorar_comentarios */
+/* usar a função ignorar_comentarios */
 struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img)
 {
     ignorar_comentarios(arquivo);
@@ -117,7 +117,7 @@ struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img)
     {
         for (j = 0; j < img->largura; j++)
         {
-            fscanf(arquivo, "%d", &aux);
+            fscanf(arquivo, "%d", &aux); /* lê um inteiro */
             img->pixels[i][j] = aux;
         }
     }
@@ -137,7 +137,7 @@ struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img)
     {
         for (j = 0; j < (img->largura); j++)
         {
-            fscanf(arquivo, "%c", &aux);
+            fscanf(arquivo, "%c", &aux); /* lê um caractere */
             img->pixels[i][j] = aux;
         }
     }
@@ -154,8 +154,10 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img)
         exit(0);
     }
 
-    /* ler o cabeçalho ignorando os comentarios */
-    /* ler a linha toda e verificar se encontra algum "# " se encontrar dá um continue pra próxima linha*/
+    /*  ler o cabeçalho ignorando os comentarios */
+    /*  ler a linha toda e verificar se encontra algum " # "
+        se encontrar dá um continue pra próxima linha*/
+
     int estado = 0;
     while (estado < 3)
     {
@@ -194,11 +196,11 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img)
         exit(EXIT_FAILURE);
     }
 
-    getc(arquivo);
+    getc(arquivo); 
 
     if (strstr(img->tipo, "P2") != 0)
     {
-        /*img = preencher_pixels_P2(arquivo, img);*/
+        img = preencher_pixels_P2(arquivo, img);
     }
     else if (strstr(img->tipo, "P5") != 0)
     {
@@ -246,44 +248,31 @@ void inicializar_nova_imagem(struct imagemPGM *nova_imagem, struct imagemPGM *im
 Assegurando que o cálculo comece após as bordas (por exemplo, começando de 1 até altura - 1 e largura - 1).*/
 void calcula_lbp(struct imagemPGM *img, struct imagemPGM *nova_imagem, int i, int j)
 {
-    int aux[3][3]; /* Matriz auxiliar para armazenar o resultado da comparação binária */
     int mult = 1;  /* Inicializa o multiplicador binário */
     int sum = 0;   /* Acumulador para armazenar a soma final (valor LBP) */
 
+    /* Reseta o multiplicador binário */
+    mult = 1;
+
     /* Aplicar a máscara com valores 2^n para os vizinhos */
-    for (int lin = 0; lin < 3; lin++)
+    for (int lin = -1; lin <= 1; lin++)
     {
-        for (int col = 0; col < 3; col++)
+        for (int col = -1; col <= 1; col++)
         {
             /* Ignorar o pixel central */
-            if (lin == 1 && col == 1)
+            if (lin == 0 && col == 0)
             {
-                aux[lin][col] = 0; /* O pixel central não é comparado */
-                continue;
+                continue; /* O pixel central não é comparado */
             }
 
             /* Comparar o pixel vizinho com o pixel central */
-            if (img->pixels[(i + lin) - 1][(j + col) - 1] >= img->pixels[i][j])
+            if (img->pixels[i + lin][j + col] >= img->pixels[i][j])
             {
-                aux[lin][col] = 1; /* Atribui 1 se o vizinho for maior ou igual */
-            }
-            else
-            {
-                aux[lin][col] = 0; /* Atribui 0 se for menor */
+                /* Adiciona o peso binário correspondente (2^n) */
+                sum += mult;
             }
 
-            /* Aplicar o peso binário (2^n) com base na posição do vizinho */
-            aux[lin][col] *= mult;
             mult *= 2; /* Aumenta o peso binário para o próximo vizinho */
-        }
-    }
-
-    /* Calcular a soma final dos valores binários (LBP) */
-    for (int lin = 0; lin < 3; lin++)
-    {
-        for (int col = 0; col < 3; col++)
-        {
-            sum += aux[lin][col]; /* Soma os valores binários ponderados */
         }
     }
 
@@ -342,6 +331,8 @@ void gerar_imagem_saida(struct imagemPGM *nova, FILE *arquivo_saida)
         }
         fprintf(arquivo_saida, "\n");
     }
+
+    fclose(arquivo_saida);
 }
 
 /*--------------------------------------------------------------------*/
