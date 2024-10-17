@@ -12,12 +12,12 @@
 
 int main(int argc, char *argv[])
 {
-    int opt;
+    int opt;             /* opção de linha de comando */
+    // int gerar_saida = 0; /* flag para gerar a imagem de saída */
     char *arquivo_entrada = NULL;
     // char *diretorio = NULL;
     // char *arquivo_saida = NULL;
     FILE *arquivo = NULL;
-    // int aux = 0;
 
     while ((opt = getopt(argc, argv, "d:i:o:")) != -1)
     {
@@ -32,17 +32,11 @@ int main(int argc, char *argv[])
         // case 'o':
         //     arquivo_saida = optarg;
         //     break;
-        default:
-            fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
-            exit(1);
+        // default:
+        // fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
+        //     exit(1);
         }
     }
-
-    // if (diretorio == NULL || arquivo_entrada == NULL || arquivo_saida == NULL)
-    // {
-    //     fprintf(stderr, "Uso: %s -d <diretório> -i <arquivo_entrada> -o <arquivo_saida>\n", argv[0]);
-    //     exit(EXIT_FAILURE);
-    // }
 
     /* Lê o arquivo de entrada */
     arquivo = fopen(arquivo_entrada, "r"); /* r = read */
@@ -55,18 +49,20 @@ int main(int argc, char *argv[])
 
     /* Aloca memória para a imagem */
     struct imagemPGM *img = alocar_imagem();
-    // /* Lê a imagem */
+
+    /* Lê a imagem */
     img = ler_imagem(arquivo, img);
     if (img == NULL)
     {
         fprintf(stderr, "Erro ao ler a imagem\n");
         free(arquivo_entrada);
         fclose(arquivo);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     /* Aloca memória para a nova imagem */
     struct imagemPGM *nova_img = alocar_imagem();
+
     /* Inicializa a nova imagem */
     inicializar_nova_imagem(nova_img, img);
 
@@ -82,20 +78,10 @@ int main(int argc, char *argv[])
     /* Gera a imagem LBP */
     gerar_lbp(img, nova_img);
 
-    // printf("gerando lbp:\n");
-
-    // for (int i = 0; i < nova_img->altura; i++)
-    // {
-    //     for (int j = 0; j < nova_img->largura; j++)
-    //     {
-    //         printf("%d ", nova_img->pixels[i][j]);
-    //     }
-    //     printf("\n");
-    // }
+    gerar_imagem_saida(nova_img, stdout);
 
     /* Gera a imagem de saída */
-    gerar_imagem_saida(nova_img, stdout);
-    // if (aux)
+    // if (gerar_saida)
     // {
     //     FILE *arquivo_saida;
     //     if (!(arquivo_saida = fopen(arquivo_saida, "wb"))) /* wb = write binary */
