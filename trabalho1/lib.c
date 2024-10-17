@@ -146,7 +146,7 @@ struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img)
 }
 
 /* Função para ler a imagem PGM */
-struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo_entrada)
+struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img)
 {
     if (arquivo == NULL)
     {
@@ -170,7 +170,7 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo
         if (estado == 0)
         {
             /* Ler o tipo da imagem (P2 ou P5) */
-            sscanf(buffer, "%s", &(img->tipo));
+            sscanf(buffer, "%s", img->tipo);
             estado++;
         }
         else if (estado == 1)
@@ -322,41 +322,28 @@ void gerar_lbp(struct imagemPGM *img, struct imagemPGM *nova)
 e gerar a saída correspondente no mesmo formato (P2 ou P5)*/
 void gerar_imagem_saida(struct imagemPGM *nova, FILE *arquivo_saida)
 {
-    /* Escreve o cabeçalho da imagem */
-    fprintf(arquivo_saida, "P%c\n", nova->tipo[1]); /* "P2" ou "P5" */
-    fprintf(arquivo_saida, "%d %d\n", nova->largura, nova->altura);
-    fprintf(arquivo_saida, "%d\n", nova->maximo);
-
-    /* Verifica o tipo da imagem para decidir como escrever os pixels */
-    if (nova->tipo[1] == '2') /* Formato P2 (ASCII) */
+    if (nova == NULL)
     {
-        /* Escreve os pixels no formato de texto (P2) */
-        for (int i = 0; i < nova->altura; i++)
-        {
-            for (int j = 0; j < nova->largura; j++)
-            {
-                /* Escreve os pixels separados por espaço ou nova linha, para legibilidade */
-                fprintf(arquivo_saida, "%d ", nova->pixels[i][j]);
-            }
-            fprintf(arquivo_saida, "\n"); // Quebra de linha após cada linha de pixels
-        }
-    }
-    else if (nova->tipo[1] == '5') /* Formato P5 (Binário) */
-    {
-        /* Escreve os pixels no formato binário (P5) */
-        for (int i = 0; i < nova->altura; i++)
-        {
-            fwrite(nova->pixels[i], sizeof(unsigned char), nova->largura, arquivo_saida);
-        }
-    }
-    else
-    {
-        fprintf(stderr, "Erro: Formato de imagem desconhecido.\n");
+        fprintf(stderr, "Erro: a imagem de saída não foi alocada corretamente.\n");
         exit(EXIT_FAILURE);
     }
 
-    fclose(arquivo_saida);
+    /* Escreve o cabeçalho da imagem */
+    fprintf(arquivo_saida, "%s\n", nova->tipo);
+    fprintf(arquivo_saida, "%d %d\n", nova->largura, nova->altura);
+    fprintf(arquivo_saida, "%d\n", nova->maximo);
+
+    /* Escreve os pixels da imagem */
+    for (int i = 0; i < nova->altura; i++)
+    {
+        for (int j = 0; j < nova->largura; j++)
+        {
+            fprintf(arquivo_saida, "%d ", nova->pixels[i][j]);
+        }
+        fprintf(arquivo_saida, "\n");
+    }
 }
+
 /*--------------------------------------------------------------------*/
 /* Funções para histogramas */
 
@@ -422,7 +409,7 @@ void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *lbp_hist, ch
 }
 
 /* Calcula a distância euclidiana entre dois histogramas LBP */
-double distancia_euclidiana(struct LBPHistograma *hist1, struct LBPHistograma *hist2, struct LBPHistograma *comparacao)
+double distancia_euclidiana(struct LBPHistograma *hist1, struct LBPHistograma *hist2)
 {
     if (hist1 == NULL || hist2 == NULL)
     {
@@ -493,7 +480,11 @@ void encontrar_imagem_similar(char *diretorio, struct LBPHistograma *histograma_
             continue;
 
         /* Monta o caminho completo para o arquivo */
-        snprintf(caminho, sizeof(caminho), "%s/%s", diretorio, diretorio_base->d_name);
+        if (snprintf(caminho, sizeof(caminho), "%s/%s", diretorio, diretorio_base->d_name) >= (int)sizeof(caminho))
+        {
+            fprintf(stderr, "Erro: caminho truncado\n");
+            exit(EXIT_FAILURE);
+        }
 
         arquivo_hist = fopen(caminho, "r");
         if (arquivo_hist == NULL)
@@ -504,7 +495,7 @@ void encontrar_imagem_similar(char *diretorio, struct LBPHistograma *histograma_
 
         /* Lê o histograma do arquivo */
         ler_histLBP(arquivo_hist, histograma_base);
-        distancia_euclidiana(histograma_teste, histograma_base, histograma_comparacao);
+        distancia_euclidiana(histograma_teste, histograma_base);
 
         /* Verifica se a nova distância é menor que a atual */
         if (histograma_comparacao->tamanho < menor_distancia_atual)
@@ -541,7 +532,8 @@ void encontrar_imagem_similar(char *diretorio, struct LBPHistograma *histograma_
 void ler_diretorio(char *nome_diretorio)
 {
     /* Verifica se nome_diretorio não é nulo */
-    if (nome_diretorio == NULL) {
+    if (nome_diretorio == NULL)
+    {
         fprintf(stderr, "Erro: nome_diretorio é nulo.\n");
         exit(EXIT_FAILURE);
     }
@@ -614,10 +606,10 @@ void converter_lbp(char arquivo_entrada[256])
     }
 
     /* Lê a imagem do arquivo */
-    img_entrada = ler_imagem(arquivo, img_entrada, arquivo_entrada);
+    img_entrada = ler_imagem(arquivo, img_entrada);
     if (img_entrada == NULL)
     {
-        fprintf(stderr, "Erro ao ler a imagem do arquivo", arquivo_entrada);
+        fprintf(stderr, "Erro ao ler a imagem do arquivo");
         liberar_imagem(img_entrada);
         fclose(arquivo);
         exit(EXIT_FAILURE);
@@ -649,7 +641,7 @@ void converter_lbp(char arquivo_entrada[256])
     }
 
     /* Gera o histograma LBP */
-    gerar_histograma(arquivo_entrada, nova_imagem, lbp);
+    gerar_histograma(nova_imagem, lbp, arquivo_entrada);
 
     liberar_imagem(img_entrada);
     liberar_imagem(nova_imagem);
