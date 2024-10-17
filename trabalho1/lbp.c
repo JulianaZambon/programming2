@@ -78,19 +78,10 @@ int main(int argc, char *argv[])
     /* Gera a imagem LBP */
     gerar_lbp(img, nova_img);
 
-    gerar_imagem_saida(nova_img, stdout);
-
-    /* Gera a imagem de saída */
-    // if (gerar_saida)
-    // {
-    //     FILE *arquivo_saida;
-    //     if (!(arquivo_saida = fopen(arquivo_saida, "wb"))) /* wb = write binary */
-    //     {
-    //         fprintf(stderr, "Erro ao abrir o arquivo de saída\n");
-    //         exit(EXIT_FAILURE);
-    //     }
-    //     gerar_imagem_saida(nova_img, arquivo_saida);
-    // }
+    /* Abre o arquivo de saída */
+    FILE *arquivo_saida = fopen("lena_lbp.pgm", "wb");
+    /* wb = write binary */
+    gerar_imagem_saida(nova_img, arquivo_saida);
 
     /* Comparar uma imagem de teste com todas as imagens da base de referência */
     /*  A saída deve ser EXATAMENTE a seguinte
