@@ -51,7 +51,7 @@ struct imagemPGM *preencher_pixels_P2(FILE *arquivo, struct imagemPGM *img);
 struct imagemPGM *preencher_pixels_P5(FILE *arquivo, struct imagemPGM *img);
 
 /* Função para ler a imagem PGM */
-struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img, char *arquivo_entrada);
+struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img);
 
 /*--------------------------------------------------------------------*/
 /* Funções para processamento LBP */
@@ -84,7 +84,7 @@ pelo total de pixels na imagem.*/
 void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *lbp_hist, char *arquivo_entrada);
 
 /* Calcula a distância euclidiana entre dois histogramas LBP */
-double distancia_euclidiana(struct LBPHistograma *hist1, struct LBPHistograma *hist2, struct LBPHistograma *comparacao);
+double distancia_euclidiana(struct LBPHistograma *hist1, struct LBPHistograma *hist2);
 
 /* Lê um histograma LBP a partir de um arquivo de texto */
 struct LBPHistograma *ler_histLBP(FILE *arquivo, struct LBPHistograma *histograma);
