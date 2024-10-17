@@ -196,7 +196,7 @@ struct imagemPGM *ler_imagem(FILE *arquivo, struct imagemPGM *img)
         exit(EXIT_FAILURE);
     }
 
-    getc(arquivo); 
+    getc(arquivo);
 
     if (strstr(img->tipo, "P2") != 0)
     {
@@ -248,8 +248,8 @@ void inicializar_nova_imagem(struct imagemPGM *nova_imagem, struct imagemPGM *im
 Assegurando que o cálculo comece após as bordas (por exemplo, começando de 1 até altura - 1 e largura - 1).*/
 void calcula_lbp(struct imagemPGM *img, struct imagemPGM *nova_imagem, int i, int j)
 {
-    int mult = 1;  /* Inicializa o multiplicador binário */
-    int sum = 0;   /* Acumulador para armazenar a soma final (valor LBP) */
+    int mult = 1; /* Inicializa o multiplicador binário */
+    int sum = 0;  /* Acumulador para armazenar a soma final (valor LBP) */
 
     /* Reseta o multiplicador binário */
     mult = 1;
@@ -351,12 +351,6 @@ void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *lbp_hist, ch
         exit(EXIT_FAILURE);
     }
 
-    /* Inicializa o histograma */
-    for (int i = 0; i < 256; i++)
-    {
-        lbp_hist->histograma[i] = 0;
-    }
-
     /* Popula o histograma */
     for (int i = 0; i < nova->altura; i++)
     {
@@ -367,20 +361,16 @@ void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *lbp_hist, ch
     }
 
     /* Normaliza o histograma */
-    double total_pixels = (double)(nova->altura * nova->largura);
-    for (int i = 0; i < 256; i++)
-    {
-        lbp_hist->histograma[i] /= total_pixels;
-    }
+    // double total_pixels = (double)(nova->altura * nova->largura);
+    // for (int i = 0; i < 256; i++)
+    // {
+    //     lbp_hist->histograma[i] /= total_pixels;  // Normalização
+    // }
 
     /* Gera o nome do arquivo de saída do histograma */
-    char nome_arquivo[128];
-    for (int i = 0; i < 128; i++) /* Preenche a string com zeros */
-    {
-        nome_arquivo[i] = '\0';
-    }
-    strcpy(nome_arquivo, arquivo_entrada); /* Copia o nome do arquivo de entrada */
-    strcat(nome_arquivo, ".lbp");          /* Adiciona a extensão do arquivo */
+    char nome_arquivo[128] = {0}; /* inicializa com zero */
+    strcpy(nome_arquivo, arquivo_entrada);
+    strcat(nome_arquivo, ".lbp");
 
     /* Abre o arquivo de saída do histograma */
     FILE *arquivo_histograma = fopen(nome_arquivo, "w");
@@ -393,7 +383,7 @@ void gerar_histograma(struct imagemPGM *nova, struct LBPHistograma *lbp_hist, ch
     /* Escreve o histograma no arquivo */
     for (int i = 0; i < 256; i++)
     {
-        fprintf(arquivo_histograma, "%d", lbp_hist->histograma[i]);
+        fprintf(arquivo_histograma, "%d\n", lbp_hist->histograma[i]);
     }
 
     fclose(arquivo_histograma);
@@ -413,10 +403,9 @@ double distancia_euclidiana(struct LBPHistograma *hist1, struct LBPHistograma *h
     for (int i = 0; i < 256; i++)
     {
         /* Calcula o quadrado da diferença entre os valores dos histogramas */
-        double diferenca = hist1->histograma[i] - hist2->histograma[i];
+        int diferenca = hist1->histograma[i] - hist2->histograma[i];
         distancia += diferenca * diferenca;
     }
-
     return sqrt(distancia);
 }
 
@@ -462,7 +451,8 @@ void encontrar_imagem_similar(char *diretorio, struct LBPHistograma *histograma_
 
     struct LBPHistograma *histograma_base = alocar_histograma();
     struct LBPHistograma *histograma_comparacao = alocar_histograma();
-    double menor_distancia_atual = *distancia; /* Inicializa a menor distância com a distância atual */
+    double menor_distancia_atual = 1e12; /* Inicializa a menor distância com a distância atual */
+    double distancia_atual = 0.0;
 
     while ((diretorio_base = readdir(base)) != NULL)
     {
@@ -486,12 +476,13 @@ void encontrar_imagem_similar(char *diretorio, struct LBPHistograma *histograma_
 
         /* Lê o histograma do arquivo */
         ler_histLBP(arquivo_hist, histograma_base);
-        distancia_euclidiana(histograma_teste, histograma_base);
+
+        distancia_atual = distancia_euclidiana(histograma_teste, histograma_base);
 
         /* Verifica se a nova distância é menor que a atual */
-        if (histograma_comparacao->tamanho < menor_distancia_atual)
+        if (distancia_atual < menor_distancia_atual)
         {
-            menor_distancia_atual = histograma_comparacao->tamanho;
+            menor_distancia_atual = distancia_atual;
             strcpy(menor_distancia, diretorio_base->d_name);
         }
 
@@ -617,7 +608,7 @@ void converter_lbp(char arquivo_entrada[256])
     }
 
     /* Inicializa a nova imagem e gera LBP */
-    inicializar_nova_imagem(img_entrada, nova_imagem);
+    inicializar_nova_imagem(nova_imagem, img_entrada);
     gerar_lbp(img_entrada, nova_imagem);
 
     /* Aloca estrutura para LBP */
@@ -641,8 +632,6 @@ void converter_lbp(char arquivo_entrada[256])
 }
 
 /*--------------------------------------------------------------------*/
-/* Funções utilitárias */
-
 /* Libera a memória alocada para uma imagem PGM */
 void liberar_imagem(struct imagemPGM *img)
 {
