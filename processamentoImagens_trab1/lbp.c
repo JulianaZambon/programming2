@@ -97,6 +97,8 @@ int main(int argc, char *argv[])
 
     /* Libera a memória alocada */
     free(diretorio);
+    free(arquivo_entrada);
+    free(arquivo_saida);
     liberar_imagem(img);
     liberar_imagem(nova_img);
     free(histograma);
