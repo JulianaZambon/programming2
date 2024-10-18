@@ -83,7 +83,6 @@ void alocar_pixels(struct imagemPGM *img)
     }
 }
 
-
 /* Ignorar Linhas de Comentário: garantir que os comentários
 (linhas que começam com #) sejam ignorados ao ler arquivos P2 e P5*/
 void ignorar_comentarios(FILE *arquivo)
@@ -285,9 +284,6 @@ void gerar_lbp(struct imagemPGM *img, struct imagemPGM *nova)
         fprintf(stderr, "Erro ao alocar memória para a imagem\n");
         exit(EXIT_FAILURE);
     }
-
-    /* Inicializa a nova imagem */
-    inicializar_nova_imagem(nova, img);
 
     /* Calcula o LBP para cada pixel da imagem */
     for (int i = 1; i < img->altura - 1; i++)
@@ -615,20 +611,23 @@ void converter_lbp(char arquivo_entrada[256])
     liberar_imagem(img_entrada);
     liberar_imagem(nova_imagem);
     free(lbp);
-    
+
     fclose(arquivo);
 }
 
-
 /* Libera a memória alocada para uma imagem PGM */
-void liberar_imagem(struct imagemPGM *imagem) {
-    if (imagem != NULL) {
-        if (imagem->pixels != NULL) {
-            for (int i = 0; i < imagem->altura; i++) {
-                free(imagem->pixels[i]);  // Libera cada linha da matriz
+void liberar_imagem(struct imagemPGM *imagem)
+{
+    if (imagem != NULL)
+    {
+        if (imagem->pixels != NULL)
+        {
+            for (int i = 0; i < imagem->altura; i++)
+            {
+                free(imagem->pixels[i]); // Libera cada linha da matriz
             }
-            free(imagem->pixels);  // Libera o array de ponteiros
+            free(imagem->pixels); // Libera o array de ponteiros
         }
-        free(imagem);  // Libera a estrutura da imagem
+        free(imagem); // Libera a estrutura da imagem
     }
 }
