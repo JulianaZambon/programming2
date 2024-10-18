@@ -56,31 +56,33 @@ struct LBPHistograma *alocar_histograma()
 /* Aloca memória para os pixels da imagem */
 void alocar_pixels(struct imagemPGM *img)
 {
-    /* aloca memória para cada linha */
+    /* Aloca memória para cada linha */
     img->pixels = (unsigned char **)malloc(img->altura * sizeof(unsigned char *));
-
     if (img->pixels == NULL)
     {
-        fprintf(stderr, "Erro ao alocar memória para os pixels\n");
+        fprintf(stderr, "Erro ao alocar memória para as linhas dos pixels\n");
         exit(EXIT_FAILURE);
     }
 
-    int i, j;
-    /* aloca memória para cada coluna da imagem */
-    for (i = 0; i < img->altura; i++)
+    /* Aloca memória para cada coluna da imagem */
+    for (int i = 0; i < img->altura; i++)
     {
-        img->pixels[i] = (unsigned char *)malloc(img->largura * sizeof(unsigned char));
+        img->pixels[i] = (unsigned char *)calloc(img->largura, sizeof(unsigned char));
         if (img->pixels[i] == NULL)
         {
-            fprintf(stderr, "Erro ao alocar memória para os pixels\n");
+            fprintf(stderr, "Erro ao alocar memória para a linha %d dos pixels\n", i);
+
+            /* Libera memória já alocada antes de sair */
+            for (int j = 0; j < i; j++)
+            {
+                free(img->pixels[j]);
+            }
+            free(img->pixels);
             exit(EXIT_FAILURE);
-        }
-        for (j = 0; j < img->largura; j++)
-        {
-            img->pixels[i][j] = 0;
         }
     }
 }
+
 
 /* Ignorar Linhas de Comentário: garantir que os comentários
 (linhas que começam com #) sejam ignorados ao ler arquivos P2 e P5*/
@@ -232,6 +234,7 @@ void inicializar_nova_imagem(struct imagemPGM *nova_imagem, struct imagemPGM *im
     if (nova_imagem->pixels == NULL)
     {
         fprintf(stderr, "Erro ao alocar pixels\n");
+        liberar_imagem(nova_imagem);
         exit(EXIT_FAILURE);
     }
 }
@@ -551,6 +554,7 @@ void ler_diretorio(char *nome_diretorio)
 }
 
 /* Converte uma imagem PGM para o formato LBP */
+/* Converte uma imagem PGM para o formato LBP */
 void converter_lbp(char arquivo_entrada[256])
 {
     FILE *arquivo = NULL;
@@ -570,11 +574,10 @@ void converter_lbp(char arquivo_entrada[256])
         exit(EXIT_FAILURE);
     }
 
-    /* Lê a imagem do arquivo */
-    img_entrada = ler_imagem(arquivo, img_entrada);
-    if (img_entrada == NULL)
+    /* Lê a imagem do arquivo (sem sobrescrever img_entrada) */
+    if (!ler_imagem(arquivo, img_entrada))
     {
-        fprintf(stderr, "Erro ao ler a imagem do arquivo");
+        fprintf(stderr, "Erro ao ler a imagem do arquivo\n");
         liberar_imagem(img_entrada);
         fclose(arquivo);
         exit(EXIT_FAILURE);
@@ -608,20 +611,24 @@ void converter_lbp(char arquivo_entrada[256])
     /* Gera o histograma LBP */
     gerar_histograma(nova_imagem, lbp, arquivo_entrada);
 
+    /* Liberar memória */
     liberar_imagem(img_entrada);
     liberar_imagem(nova_imagem);
     free(lbp);
+    
     fclose(arquivo);
 }
 
+
 /* Libera a memória alocada para uma imagem PGM */
-void liberar_imagem(struct imagemPGM *img)
-{
-    int i;
-    for (i = 0; i < img->altura; i++)
-    {
-        free(img->pixels[i]);
+void liberar_imagem(struct imagemPGM *imagem) {
+    if (imagem != NULL) {
+        if (imagem->pixels != NULL) {
+            for (int i = 0; i < imagem->altura; i++) {
+                free(imagem->pixels[i]);  // Libera cada linha da matriz
+            }
+            free(imagem->pixels);  // Libera o array de ponteiros
+        }
+        free(imagem);  // Libera a estrutura da imagem
     }
-    free(img->pixels);
-    free(img);
 }
